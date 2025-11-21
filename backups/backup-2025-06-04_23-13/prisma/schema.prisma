@@ -1,0 +1,46 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String            @id @default(cuid())
+  name            String?
+  email           String            @unique
+  password        String?
+  role            String            @default("user")
+  phone           String?
+  bio             String?
+  avatar          String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  businessProfile BusinessProfile?
+}
+
+model BusinessProfile {
+  id            Int       @id @default(autoincrement())
+  userId        String    @unique
+  displayName   String
+  slug          String    @unique
+  description   String
+  services      String[]
+  phone         String
+  address       String
+  locationLat   Float?
+  locationLng   Float?
+  galleryImages String[]
+  openingHours  String
+  website       String
+  logoUrl       String?    // لوگوی فروشگاه
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+}

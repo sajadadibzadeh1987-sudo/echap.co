@@ -1,0 +1,131 @@
+├── app/
+│   ├── ads/
+│   │   ├── [id]/
+│   │   │   ├── page.tsx
+│   ├── api/
+│   │   ├── ads/
+│   │   │   ├── route.ts
+│   │   │   ├── [id]/
+│   │   │   │   ├── page.tsx
+│   │   ├── auth/
+│   │   │   ├── error/
+│   │   │   │   ├── page.tsx
+│   │   │   ├── [...nextauth]/
+│   │   │   │   ├── route.ts
+│   │   ├── business-profile/
+│   │   │   ├── route.ts
+│   │   ├── get-role/
+│   │   │   ├── route.ts
+│   │   ├── jobads/
+│   │   │   ├── route.ts
+│   │   │   ├── [id]/
+│   │   │   │   ├── route.ts
+│   │   ├── me/
+│   │   │   ├── route.ts
+│   │   ├── my/
+│   │   │   ├── jobads/
+│   │   │   │   ├── route.ts
+│   │   ├── printer-profile/
+│   │   │   ├── route.ts
+│   │   │   ├── [slug]/
+│   │   │   │   ├── route.ts
+│   │   ├── profile/
+│   │   │   ├── route.ts
+│   │   ├── send-otp/
+│   │   │   ├── route.ts
+│   │   ├── test-token/
+│   │   │   ├── route.ts
+│   │   ├── update-role/
+│   │   │   ├── route.ts
+│   │   ├── upload-logo/
+│   │   │   ├── route.ts
+│   ├── dashboard/
+│   │   ├── business-profile/
+│   │   │   ├── page.tsx
+│   │   ├── ClientDashboardPage.tsx
+│   │   ├── jobads/
+│   │   │   ├── create/
+│   │   │   │   ├── page.tsx
+│   │   │   ├── my/
+│   │   │   │   ├── page.tsx
+│   │   ├── layout.tsx
+│   │   ├── page.tsx
+│   │   ├── printer-profile/
+│   │   │   ├── page.tsx
+│   ├── favicon.ico
+│   ├── globals.css
+│   ├── layout.tsx
+│   ├── page.tsx
+│   ├── printer/
+│   │   ├── [slug]/
+│   │   │   ├── page.tsx
+│   ├── profiles/
+│   │   ├── printer/
+│   │   │   ├── [slug]/
+│   │   │   │   ├── page.tsx
+│   │   ├── [type]/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── [slug]/
+│   │   │   │   ├── page.tsx
+│   ├── providers.tsx
+├── components/
+│   ├── AdCard.tsx
+│   ├── auth/
+│   │   ├── AuthModal.tsx
+│   │   ├── ChooseRoleModal.tsx
+│   │   ├── LoginForm.tsx
+│   │   ├── LoginWithOtpForm.tsx
+│   │   ├── RoleSelectModal.tsx
+│   ├── BusinessProfileForm.tsx
+│   ├── common/
+│   │   ├── DialogWrapper.tsx
+│   ├── dashboard/
+│   │   ├── FreelancerDashboard.tsx
+│   │   ├── JobAdModal.tsx
+│   │   ├── PrinterProfileForm.tsx
+│   │   ├── Sidebar.tsx
+│   │   ├── StatsCard.tsx
+│   │   ├── SupplierDashboard.tsx
+│   │   ├── TopBar.tsx
+│   │   ├── UserCard.tsx
+│   │   ├── UserDashboard.tsx
+│   │   ├── UserInfo.tsx
+│   ├── layout/
+│   │   ├── DashboardLayout.tsx
+│   ├── MapPicker.tsx
+│   ├── modals/
+│   │   ├── RoleSelectModal.tsx
+│   ├── profile/
+│   │   ├── ProfileEditModal.tsx
+│   │   ├── update/
+│   │   │   ├── route.ts
+│   │   ├── UserProfileForm.tsx
+│   ├── providers/
+│   │   ├── SessionWrapper.tsx
+│   ├── SiteFooter.tsx
+│   ├── SiteHeader.tsx
+│   ├── ui/
+│   │   ├── button.tsx
+│   │   ├── card.tsx
+│   │   ├── dialog.tsx
+│   │   ├── input.tsx
+│   │   ├── label.tsx
+│   │   ├── radio-group.tsx
+│   │   ├── StoreCard.tsx
+│   │   ├── textarea.tsx
+├── data/
+│   ├── ads.ts
+│   ├── homeSections.ts
+│   ├── menu.ts
+├── hooks/
+│   ├── use-modal-store.ts
+├── lib/
+│   ├── api.ts
+│   ├── auth.ts
+│   ├── prisma.ts
+│   ├── toast.ts
+│   ├── utils.ts
+├── types/
+│   ├── jobAd.ts
+│   ├── next-auth.d.ts
