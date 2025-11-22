@@ -1,12 +1,28 @@
 import { PrismaClient } from "@prisma/client";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 
 const prisma = new PrismaClient();
 
-export const dynamic = "force-dynamic"; // ✅ اضافه شده برای حذف هشدار params
+export const dynamic = "force-dynamic";
 
-export default async function AdDetailPage(props: { params: { id: string } }) {
-  const { id } = props.params;
+// 🟢 متادیتا برای تایتل صفحه آگهی
+export async function generateMetadata({ params }: any): Promise<Metadata> {
+  const { id } = (await params) || params;
+
+  const ad = await prisma.jobAd.findUnique({
+    where: { id },
+    select: { title: true },
+  });
+
+  return {
+    title: ad ? ad.title : "آگهی یافت نشد",
+  };
+}
+
+// 🟢 صفحه جزئیات آگهی
+export default async function AdDetailPage({ params }: any) {
+  const { id } = (await params) || params;
 
   const ad = await prisma.jobAd.findUnique({
     where: { id },
