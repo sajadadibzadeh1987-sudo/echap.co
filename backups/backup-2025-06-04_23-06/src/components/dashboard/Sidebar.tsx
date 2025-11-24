@@ -19,10 +19,9 @@ export default function Sidebar({ role }: Props) {
     const baseItems = [
       { label: "خانه", href: "/dashboard" },
       { label: "بازگشت", action: () => router.back() },
-      {
-        label: "خروج",
-        action: () => signOut({ callbackUrl: "https://echap.co/" }), // ← اصلاح اصلی
-      },
+
+      // 🔥 خروج اصلاح‌شده
+      { label: "خروج", action: () => signOut({ callbackUrl: "https://echap.co/" }) },
     ];
 
     if (role === "freelancer") {
