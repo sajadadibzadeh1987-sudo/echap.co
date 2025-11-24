@@ -1,4 +1,5 @@
 // src/lib/auth.ts
+
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { AuthOptions, Session } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -16,38 +17,57 @@ export const authOptions: AuthOptions = {
       },
 
       async authorize(credentials) {
-        const phone = credentials?.phone;
-        const otp = credentials?.otp;
-        if (!phone || !otp) return null;
+        const phone = credentials?.phone?.trim();
+        const otp = credentials?.otp?.trim();
 
-        // 1) چک کردن OTP از جدول OTP
-        const otpRecord = await prisma.oTP.findUnique({
-          where: { phone },
-        });
-        if (!otpRecord) return null;
-
-        // چک کردن اعتبار کد (۵ دقیقه اعتبار)
-        const expiry = new Date(otpRecord.createdAt.getTime() + 5 * 60000);
-        if (otpRecord.code !== otp || expiry < new Date()) {
+        if (!phone || !otp) {
+          console.log("❌ Phone or OTP missing");
           return null;
         }
 
-        // 2) پیدا کردن یا ساختن کاربر
-        let user = await prisma.user.findUnique({
+        // 🟢 1) گرفتن رکورد OTP از جدول OTP
+        const otpRecord = await prisma.oTP.findUnique({
           where: { phone },
         });
 
+        if (!otpRecord) {
+          console.log("❌ No OTP record found for phone:", phone);
+          return null;
+        }
+
+        // 🟢 2) چک اعتبار OTP
+        const expiry = new Date(otpRecord.createdAt.getTime() + 5 * 60000);
+        const now = new Date();
+
+        if (otpRecord.code !== otp) {
+          console.log("❌ OTP mismatch:", otpRecord.code, otp);
+          return null;
+        }
+
+        if (expiry < now) {
+          console.log("❌ OTP expired");
+          return null;
+        }
+
+        // 🟢 3) پیدا کردن یا ساخت کاربر
+        let user = await prisma.user.findUnique({ where: { phone } });
+
         if (!user) {
           user = await prisma.user.create({
-            data: { phone },
+            data: {
+              phone,
+              role: "user",
+              hasSelectedRole: false,
+            },
           });
         }
 
-        // 3) پاک کردن کد OTP پس از استفاده
+        // 🟢 4) پاک کردن OTP بعد از استفاده
         await prisma.oTP.delete({
           where: { phone },
         });
 
+        // 🟢 5) مقدار برگشتی برای JWT و سشن
         return {
           id: user.id,
           phone: user.phone,

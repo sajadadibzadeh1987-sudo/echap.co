@@ -1,115 +1,146 @@
-// src/components/auth/LoginWithOtpForm.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import axios from "axios";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
-// ⚠️ هوک پاپ‌آپ مادر – به صورت default import
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import useModalStore from "@/hooks/use-modal-store";
 
-// Toast ساده
-import { toast } from "react-hot-toast";
+type Step = "phone" | "verify";
 
-export default function LoginWithOtpForm() {
+const LoginWithOtpForm: React.FC = () => {
   const router = useRouter();
+  const { closeModal } = useModalStore();
 
-  // 👇 برای اینکه خطای onClose نده، موقتاً as any می‌کنیم
-  const modal = useModalStore() as any;
-
+  const [step, setStep] = useState<Step>("phone");
   const [phone, setPhone] = useState("");
-  const [step, setStep] = useState<"phone" | "verify">("phone");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(0); // ثانیه
 
-  // ====== تایمر ۲ دقیقه‌ای ======
-  const [timeLeft, setTimeLeft] = useState(0);
-
+  // تایمر شمارش معکوس
   useEffect(() => {
     if (timeLeft <= 0) return;
-
-    const interval = setInterval(() => {
-      setTimeLeft((prev) => prev - 1);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-
-    return () => clearInterval(interval);
+    return () => clearInterval(timer);
   }, [timeLeft]);
 
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s < 10 ? "0" + s : s}`;
+    const m = Math.floor(seconds / 60)
+      .toString()
+      .padStart(2, "0");
+    const s = (seconds % 60).toString().padStart(2, "0");
+    return `${m}:${s}`;
   };
 
-  // ====== ارسال کد ======
-  const handleSendCode = async () => {
-    if (!phone.trim()) {
-      toast.error("شماره را وارد کنید");
+  // ارسال کد
+  const handleSendCode = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+
+    if (!phone || phone.trim().length !== 11) {
+      toast.error("شماره موبایل را صحیح وارد کنید");
       return;
     }
 
-    setLoading(true);
     try {
-      await axios.post("/api/send-otp", { phone });
-      toast.success("کد تایید ارسال شد");
+      setLoading(true);
+      const res = await fetch("/api/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone }),
+      });
 
+      const data = await res.json();
+
+      if (!res.ok) {
+        toast.error(data?.message || "ارسال کد تایید با خطا مواجه شد");
+        return;
+      }
+
+      toast.success("کد تایید ارسال شد");
       setStep("verify");
-      setTimeLeft(120); // شروع تایمر ۲ دقیقه‌ای
-    } catch {
-      toast.error("خطا در ارسال کد تایید");
+      setTimeLeft(120); // ۲ دقیقه
+    } catch (error) {
+      console.error("SEND_OTP_ERROR", error);
+      toast.error("خطا در ارتباط با سرور");
     } finally {
       setLoading(false);
     }
   };
 
-  // ====== تایید کد ======
-  const handleVerify = async () => {
-    if (!otp.trim()) {
+  // تایید کد و ورود
+  const handleVerify = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!otp || otp.trim().length < 4) {
       toast.error("کد تایید را وارد کنید");
       return;
     }
 
-    setLoading(true);
+    if (timeLeft <= 0) {
+      toast.error("کد منقضی شده است، دوباره ارسال کنید");
+      return;
+    }
 
-    const res = await signIn("credentials", {
-      phone,
-      otp,
-      redirect: false,
-    });
+    try {
+      setLoading(true);
 
-    setLoading(false);
+      const res = await signIn("credentials", {
+        redirect: false,
+        phone,
+        otp,
+      });
 
-    if (res?.ok) {
-      toast.success("ورود با موفقیت انجام شد");
+      console.log("SIGNIN_RESULT", res);
 
-      // بستن اتومات پاپ‌آپ + رفتن به داشبورد
-      setTimeout(() => {
-        if (modal?.onClose) modal.onClose();
+      if (res?.ok) {
+        toast.success("ورود با موفقیت انجام شد");
+
+        // 🟢 اینجا مودال را می‌بندیم
+        closeModal();
+
+        // هدایت به داشبورد
         router.push("/dashboard");
-      }, 600);
-    } else {
-      toast.error("کد تایید اشتباه یا منقضی شده");
+        router.refresh();
+      } else {
+        toast.error(
+          res?.error || "کد تایید نادرست است یا منقضی شده است"
+        );
+      }
+    } catch (error) {
+      console.error("VERIFY_OTP_ERROR", error);
+      toast.error("خطا در ارتباط با سرور");
+    } finally {
+      setLoading(false);
     }
   };
 
+  const handleResend = async () => {
+    await handleSendCode();
+  };
+
   return (
-    <div className="space-y-4">
+    <form
+      onSubmit={step === "phone" ? handleSendCode : handleVerify}
+      className="flex flex-col gap-4 p-4"
+    >
       {step === "phone" && (
         <>
+          <label className="text-sm font-medium">شماره موبایل</label>
           <Input
             type="tel"
-            placeholder="شماره موبایل"
+            dir="ltr"
+            placeholder="مثلاً 09121234567"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-          />
-          <Button
-            onClick={handleSendCode}
             disabled={loading}
-            className="w-full"
-          >
+          />
+          <Button type="submit" disabled={loading}>
             {loading ? "در حال ارسال..." : "ارسال کد تایید"}
           </Button>
         </>
@@ -117,43 +148,49 @@ export default function LoginWithOtpForm() {
 
       {step === "verify" && (
         <>
+          <label className="text-sm font-medium">کد تایید</label>
           <Input
             type="text"
-            placeholder="کد تایید"
+            dir="ltr"
+            placeholder="کد ۶ رقمی"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
+            disabled={loading}
           />
 
-          {/* تایمر مثل اپ‌های بانکی */}
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-xs text-gray-500 text-center">
             {timeLeft > 0 ? (
-              <>زمان باقی‌مانده: {formatTime(timeLeft)}</>
+              <>زمان باقیمانده: {formatTime(timeLeft)}</>
             ) : (
               <span className="text-red-500">
-                کد منقضی شد • لطفاً دوباره ارسال کنید
+                کد منقضی شده است، ارسال مجدد را بزنید
               </span>
             )}
           </div>
 
-          <Button
-            onClick={handleVerify}
-            disabled={loading || timeLeft <= 0}
-            className="w-full"
-          >
-            {loading ? "در حال ورود..." : "تایید و ورود"}
-          </Button>
-
-          {timeLeft <= 0 && (
+          <div className="flex gap-2 mt-2">
             <Button
+              type="submit"
+              className="flex-1"
+              disabled={loading || timeLeft <= 0}
+            >
+              {loading ? "در حال ورود..." : "تایید و ورود"}
+            </Button>
+
+            <Button
+              type="button"
               variant="outline"
-              className="w-full mt-2"
-              onClick={handleSendCode}
+              className="flex-1"
+              onClick={handleResend}
+              disabled={loading}
             >
               ارسال مجدد کد
             </Button>
-          )}
+          </div>
         </>
       )}
-    </div>
+    </form>
   );
-}
+};
+
+export default LoginWithOtpForm;

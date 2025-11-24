@@ -4,32 +4,31 @@ import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import LoginWithOtpForm from "./LoginWithOtpForm"; // ✅ تغییر نام درست
+import LoginWithOtpForm from "./LoginWithOtpForm";
+import useModalStore from "@/hooks/use-modal-store";
 
-interface AuthModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
-
-export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
+export default function AuthModal() {
+  const { isOpen, type, closeModal } = useModalStore();
   const [mounted, setMounted] = useState(false);
+
+  const open = isOpen && type === "auth";
 
   useEffect(() => {
     setMounted(true);
-    document.body.style.overflow = isOpen ? "hidden" : "auto";
-  }, [isOpen]);
+    document.body.style.overflow = open ? "hidden" : "auto";
+  }, [open]);
 
   if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>
-      {isOpen && (
+      {open && (
         <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          onClick={onClose}
+          onClick={closeModal}
         >
           <motion.div
             className="bg-white rounded-xl shadow-xl w-[90%] max-w-md p-6 relative text-right"
@@ -40,12 +39,11 @@ export default function AuthModal({ isOpen, onClose }: AuthModalProps) {
           >
             <button
               className="absolute left-4 top-4 text-gray-500 hover:text-red-500 transition"
-              onClick={onClose}
+              onClick={closeModal}
             >
               <X size={24} />
             </button>
 
-            {/* فرم ورود با موبایل و کد تایید */}
             <LoginWithOtpForm />
           </motion.div>
         </motion.div>
