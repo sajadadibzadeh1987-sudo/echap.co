@@ -9,7 +9,7 @@ import ProfileEditModal from "@/components/profile/ProfileEditModal";
 interface MenuItem {
   label: string;
   href?: string;
-  action?: () => void;
+  action?: () => void | Promise<void>;
 }
 
 interface Props {
@@ -22,18 +22,21 @@ export default function Sidebar({ role }: Props) {
   const { data: session } = useSession();
   const [editOpen, setEditOpen] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false });
+    } finally {
+      router.push("/");
+    }
+  };
+
   const items: MenuItem[] = useMemo(() => {
     if (!session?.user) return [];
 
     const base: MenuItem[] = [
       { label: "خانه", href: "/dashboard" },
       { label: "بازگشت", action: () => router.back() },
-
-      // 🔧 خروج: ریدایرکت مستقیم به دامنه اصلی
-      {
-        label: "خروج",
-        action: () => signOut({ callbackUrl: "https://echap.co/" }),
-      },
+      { label: "خروج", action: handleLogout },
     ];
 
     if (role === "supplier") {
@@ -53,7 +56,7 @@ export default function Sidebar({ role }: Props) {
       base.unshift({ label: "پروفایل من", action: () => setEditOpen(true) });
     }
 
-    // 🔧 آیتم‌های مخصوص نقش printer
+    // آیتم‌های مخصوص نقش printer
     const slug = (session.user as { slug?: string }).slug;
     if (role === "printer") {
       base.unshift({

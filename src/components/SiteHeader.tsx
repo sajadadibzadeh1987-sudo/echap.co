@@ -3,7 +3,7 @@
 
 import { useState, useRef } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { mainMenu, MenuItem, MegaMenuSection } from "@/data/menu";
 import { useSession, signOut } from "next-auth/react";
 import { LogIn, LayoutDashboard, PlusCircle, Store, Home } from "lucide-react";
@@ -17,6 +17,7 @@ export default function SiteHeader() {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const router = useRouter();
   const isDashboard = pathname?.startsWith("/dashboard");
 
   const { openModal } = useModalStore();
@@ -34,6 +35,14 @@ export default function SiteHeader() {
 
   const handleMouseLeave = () => {
     timeoutRef.current = setTimeout(() => setActiveMenu(null), 200);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false });
+    } finally {
+      router.push("/");
+    }
   };
 
   return (
@@ -143,9 +152,7 @@ export default function SiteHeader() {
 
               {/* خروج */}
               <button
-                onClick={() =>
-                  signOut({ callbackUrl: "https://echap.co/" })
-                }
+                onClick={handleLogout}
                 className="flex items-center gap-1 border border-red-500 text-red-600 hover:text-white hover:bg-red-500 px-3 py-1.5 rounded text-sm transition"
               >
                 خروج

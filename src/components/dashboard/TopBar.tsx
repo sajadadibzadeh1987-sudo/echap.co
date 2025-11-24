@@ -5,9 +5,11 @@ import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const TopBar = () => {
   const { data: session } = useSession();
+  const router = useRouter();
 
   // کست کردن user به تایپ کامل‌تری که خودت نیاز داری
   const user = session?.user as {
@@ -17,6 +19,14 @@ const TopBar = () => {
     lastName?: string;
     email?: string;
     image?: string;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut({ redirect: false });
+    } finally {
+      router.push("/");
+    }
   };
 
   return (
@@ -31,7 +41,7 @@ const TopBar = () => {
       <div>
         <Button
           variant="ghost"
-          onClick={() => signOut({ callbackUrl: "https://echap.co/" })} // ✅ اصلاح شد
+          onClick={handleLogout}
           className="gap-2 text-sm"
         >
           <LogOut className="w-4 h-4" />
