@@ -1,8 +1,18 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
+
 import "./globals.css";
-import SiteHeader from "@/components/SiteHeader";
+
+// هدر جدید (دسکتاپ + موبایل)
+import SiteHeader from "@/components/layout/SiteHeader";
+// نوار پایینی موبایل شبیه دیجی‌کالا
+import MobileBottomNav from "@/components/layout/MobileBottomNav";
+
+// فوتر قدیمی
 import SiteFooter from "@/components/SiteFooter";
-import { Toaster } from "react-hot-toast"; // 🔄 جایگزین sonner
+
+import { Toaster } from "react-hot-toast";
 import { SessionWrapper } from "@/components/providers/SessionWrapper";
 
 export const metadata: Metadata = {
@@ -13,16 +23,26 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html lang="fa" dir="rtl">
       <body className="font-yekan antialiased bg-white text-gray-900">
         <SessionWrapper>
+          {/* هدر */}
           <SiteHeader />
-          <main className="min-h-screen">{children}</main>
+
+          {/* محتوای اصلی – فضای پایین برای نوار موبایل در نظر گرفته شده */}
+          <main className="min-h-screen pb-20">{children}</main>
+
+          {/* فوتر دسکتاپ */}
           <SiteFooter />
-          <Toaster position="top-center" /> {/* ✅ فعال‌سازی toast */}
+
+          {/* نوار ناوبری پایین فقط در موبایل */}
+          <MobileBottomNav />
+
+          {/* Toastها */}
+          <Toaster position="top-center" />
         </SessionWrapper>
       </body>
     </html>

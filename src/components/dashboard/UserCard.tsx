@@ -1,3 +1,4 @@
+// src/components/dashboard/UserCard.tsx
 "use client";
 
 import { useSession } from "next-auth/react";
@@ -8,14 +9,28 @@ interface Props {
   onEdit?: () => void; // تابع اختیاری برای باز کردن پاپ‌آپ
 }
 
+// ⭐ تایپ کاربر در سشن (با فیلدهای اضافه‌شده‌ی خودت)
+type AppUser = {
+  id: string;
+  role?: string | null;
+  phone?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  image?: string | null;
+};
+
 export default function UserCard({ onEdit }: Props) {
   const { data: session } = useSession();
-  const user = session?.user;
+
+  // Cast امن به تایپ خودمان
+  const user = session?.user as AppUser | undefined;
 
   if (!user) return null;
 
-  const hasProfile =
-    user.firstName?.trim() && user.lastName?.trim();
+  const hasProfile = Boolean(
+    user.firstName?.trim() && user.lastName?.trim()
+  );
 
   return (
     <div
@@ -31,13 +46,26 @@ export default function UserCard({ onEdit }: Props) {
             className="object-cover"
           />
         </div>
+
         <div className="flex-1 space-y-1">
           <h2 className="text-xl font-bold text-gray-800">
-            {user.firstName || "بدون نام"} {user.lastName || ""}
+            {user.firstName || "بدون نام"}{" "}
+            {user.lastName || ""}
           </h2>
-          {user.email && <p className="text-sm text-gray-600">📧 {user.email}</p>}
-          {user.phone && <p className="text-sm text-gray-600">📱 {user.phone}</p>}
-          {user.role && <p className="text-sm text-gray-500 italic">نقش: {user.role}</p>}
+
+          {user.email && (
+            <p className="text-sm text-gray-600">📧 {user.email}</p>
+          )}
+
+          {user.phone && (
+            <p className="text-sm text-gray-600">📱 {user.phone}</p>
+          )}
+
+          {user.role && (
+            <p className="text-sm text-gray-500 italic">
+              نقش: {user.role}
+            </p>
+          )}
         </div>
       </div>
 
