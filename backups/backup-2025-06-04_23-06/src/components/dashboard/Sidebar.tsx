@@ -11,13 +11,18 @@ interface Props {
 export default function Sidebar({ role }: Props) {
   const router = useRouter();
   const pathname = usePathname();
-  const [items, setItems] = useState<{ label: string; href?: string; action?: () => void }[]>([]);
+  const [items, setItems] = useState<
+    { label: string; href?: string; action?: () => void }[]
+  >([]);
 
   useEffect(() => {
     const baseItems = [
       { label: "خانه", href: "/dashboard" },
       { label: "بازگشت", action: () => router.back() },
-      { label: "خروج", action: () => signOut({ callbackUrl: "/login" }) },
+      {
+        label: "خروج",
+        action: () => signOut({ callbackUrl: "https://echap.co/" }), // ← اصلاح اصلی
+      },
     ];
 
     if (role === "freelancer") {
@@ -34,7 +39,10 @@ export default function Sidebar({ role }: Props) {
   }, [role, router]);
 
   return (
-    <aside className="w-64 min-h-screen bg-gray-100 border-l border-gray-300 p-4 text-right" dir="rtl">
+    <aside
+      className="w-64 min-h-screen bg-gray-100 border-l border-gray-300 p-4 text-right"
+      dir="rtl"
+    >
       <h2 className="text-lg font-bold mb-4">منو</h2>
       <ul className="space-y-2">
         {items.map((item, index) => (
