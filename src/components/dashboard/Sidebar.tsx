@@ -28,7 +28,12 @@ export default function Sidebar({ role }: Props) {
     const base: MenuItem[] = [
       { label: "خانه", href: "/dashboard" },
       { label: "بازگشت", action: () => router.back() },
-      { label: "خروج", action: () => signOut({ callbackUrl: "/" }) },
+
+      // 🔧 خروج: ریدایرکت مستقیم به دامنه اصلی
+      {
+        label: "خروج",
+        action: () => signOut({ callbackUrl: "https://echap.co/" }),
+      },
     ];
 
     if (role === "supplier") {
@@ -53,7 +58,7 @@ export default function Sidebar({ role }: Props) {
     if (role === "printer") {
       base.unshift({
         label: "🛠 ایجاد / ویرایش پروفایل چاپخانه",
-        href: "/dashboard/printer-profile", // ← مسیر اصلاح‌شده
+        href: "/dashboard/printer-profile",
       });
 
       if (slug) {
