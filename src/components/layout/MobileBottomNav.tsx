@@ -4,25 +4,25 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, User2, PlusCircle, Megaphone, ListChecks } from "lucide-react";
+import { useSession } from "next-auth/react";
+import useModalStore from "@/hooks/use-modal-store";
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { data: session } = useSession();
+  const { openModal } = useModalStore();
 
-  // ترتیب آرایه بر اساس چپ → راست (چون جهت را LTR می‌کنیم):
-  // [نیازمندی‌ها, آگهی‌ها, خانه, درج آگهی, پروفایل]
-  // پس راست‌ترین = پروفایل، چپ‌ترین = نیازمندی‌ها
-  const items = [
-    { href: "/ads", label: "نیازمندی‌ها", icon: ListChecks },
-    { href: "/dashboard/jobads/my", label: "آگهی‌ها", icon: Megaphone },
-    { href: "/", label: "خانه", icon: Home, emphasize: true },
-    { href: "/dashboard/jobads/create", label: "درج آگهی", icon: PlusCircle },
-    { href: "/dashboard", label: "پروفایل", icon: User2 },
-  ];
+  const isLoggedIn = !!session?.user;
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+
+  const baseStyle =
+    "flex flex-col items-center justify-center transition transform active:scale-95";
+  const normalSize = "flex-1 py-1.5 rounded-xl";
+  const centerSize = "flex-[1.2] py-2 px-3 rounded-2xl";
 
   return (
     <nav
@@ -32,42 +32,98 @@ export default function MobileBottomNav() {
         bg-white/95 backdrop-blur
         border-t border-gray-200
       "
-      // ❗ جهت فلکس و چیدمان را LTR می‌کنیم تا ترتیب دقیقاً مطابق آرایه باشد
+      // چیدمان آیکن‌ها LTR، ولی متن‌ها RTL
       style={{ direction: "ltr" }}
     >
       <div className="max-w-md mx-auto px-2 py-1">
         <div className="flex justify-between gap-1">
-          {items.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
+          {/* چپ‌ترین: نیازمندی‌ها */}
+          <Link
+            href="/ads"
+            className={`${baseStyle} ${normalSize} ${
+              isActive("/ads")
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <ListChecks className="w-5 h-5 mb-0.5" />
+            <span className="text-[11px] leading-none" dir="rtl">
+              نیازمندی‌ها
+            </span>
+          </Link>
 
-            const baseStyle =
-              "flex flex-col items-center justify-center transition transform active:scale-95"; // scaleOnClick 🔥
+          {/* آگهی‌ها */}
+          <Link
+            href="/dashboard/jobads/my"
+            className={`${baseStyle} ${normalSize} ${
+              isActive("/dashboard/jobads")
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Megaphone className="w-5 h-5 mb-0.5" />
+            <span className="text-[11px] leading-none" dir="rtl">
+              آگهی‌ها
+            </span>
+          </Link>
 
-            const sizeStyle = item.emphasize
-              ? "flex-[1.2] py-2 px-3 rounded-2xl"
-              : "flex-1 py-1.5 rounded-xl";
+          {/* وسط: خانه (بزرگ‌تر) */}
+          <Link
+            href="/"
+            className={`${baseStyle} ${centerSize} ${
+              isActive("/")
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <Home className="w-6 h-6 mb-0.5" />
+            <span className="text-[11px] leading-none" dir="rtl">
+              خانه
+            </span>
+          </Link>
 
-            const colorStyle = active
-              ? "bg-gray-900 text-white"
-              : "text-gray-600 hover:bg-gray-100";
+          {/* درج آگهی */}
+          <Link
+            href="/dashboard/jobads/create"
+            className={`${baseStyle} ${normalSize} ${
+              isActive("/dashboard/jobads/create")
+                ? "bg-gray-900 text-white"
+                : "text-gray-600 hover:bg-gray-100"
+            }`}
+          >
+            <PlusCircle className="w-5 h-5 mb-0.5" />
+            <span className="text-[11px] leading-none" dir="rtl">
+              درج آگهی
+            </span>
+          </Link>
 
-            const iconSize = item.emphasize ? "w-6 h-6" : "w-5 h-5";
-
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`${baseStyle} ${sizeStyle} ${colorStyle}`}
-              >
-                <Icon className={`${iconSize} mb-0.5`} />
-                {/* متن هر آیتم RTL باشد که فارسی درست نمایش داده شود */}
-                <span className="text-[11px] leading-none" dir="rtl">
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
+          {/* راست‌ترین: پروفایل یا ورود */}
+          {isLoggedIn ? (
+            <Link
+              href="/dashboard"
+              className={`${baseStyle} ${normalSize} ${
+                isActive("/dashboard")
+                  ? "bg-gray-900 text-white"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
+            >
+              <User2 className="w-5 h-5 mb-0.5" />
+              <span className="text-[11px] leading-none" dir="rtl">
+                پروفایل
+              </span>
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openModal("auth")} // 👈 این مهم‌ترین خط اتصال است
+              className={`${baseStyle} ${normalSize} text-gray-600 hover:bg-gray-100`}
+            >
+              <User2 className="w-5 h-5 mb-0.5" />
+              <span className="text-[11px] leading-none" dir="rtl">
+                ورود
+              </span>
+            </button>
+          )}
         </div>
       </div>
     </nav>

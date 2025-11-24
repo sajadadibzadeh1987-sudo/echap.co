@@ -65,6 +65,7 @@ const LoginWithOtpForm: React.FC = () => {
       toast.success("کد تایید ارسال شد");
       setStep("verify");
       setTimeLeft(120); // ۲ دقیقه
+      setOtp(""); // پاک کردن کد قبلی در صورت وجود
     } catch (error) {
       console.error("SEND_OTP_ERROR", error);
       toast.error("خطا در ارتباط با سرور");
@@ -101,7 +102,7 @@ const LoginWithOtpForm: React.FC = () => {
       if (res?.ok) {
         toast.success("ورود با موفقیت انجام شد");
 
-        // 🟢 اینجا مودال را می‌بندیم
+        // 🟢 بستن مودال
         closeModal();
 
         // هدایت به داشبورد
@@ -120,7 +121,12 @@ const LoginWithOtpForm: React.FC = () => {
     }
   };
 
+  // ارسال مجدد کد - فقط وقتی تایمر تمام شده باشد
   const handleResend = async () => {
+    if (timeLeft > 0) {
+      // از نظر UI دکمه در این حالت disabled است، ولی برای اطمینان اینجا هم چک می‌کنیم
+      return;
+    }
     await handleSendCode();
   };
 
@@ -163,7 +169,7 @@ const LoginWithOtpForm: React.FC = () => {
               <>زمان باقیمانده: {formatTime(timeLeft)}</>
             ) : (
               <span className="text-red-500">
-                کد منقضی شده است، ارسال مجدد را بزنید
+                کد منقضی شده است، می‌توانید دوباره ارسال کنید
               </span>
             )}
           </div>
@@ -182,9 +188,9 @@ const LoginWithOtpForm: React.FC = () => {
               variant="outline"
               className="flex-1"
               onClick={handleResend}
-              disabled={loading}
+              disabled={loading || timeLeft > 0} // ⬅️ فقط بعد از اتمام تایمر فعال می‌شود
             >
-              ارسال مجدد کد
+              {timeLeft > 0 ? "ارسال مجدد غیرفعال" : "ارسال مجدد کد"}
             </Button>
           </div>
         </>
