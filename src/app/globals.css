@@ -10,3 +10,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@keyframes slide-in-rtl {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-out-rtl {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.animate-slide-in-rtl {
+  animation: slide-in-rtl 0.25s ease-out forwards;
+}
+
+.animate-slide-out-rtl {
+  animation: slide-out-rtl 0.25s ease-in forwards;
+}
