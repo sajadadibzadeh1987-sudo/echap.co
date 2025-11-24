@@ -6,6 +6,7 @@ import prisma from "@/lib/prisma";
 
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
+
   providers: [
     CredentialsProvider({
       name: "OTP Login",
@@ -13,32 +14,44 @@ export const authOptions: AuthOptions = {
         phone: { label: "Phone", type: "text" },
         otp: { label: "OTP", type: "text" },
       },
+
       async authorize(credentials) {
         const phone = credentials?.phone;
         const otp = credentials?.otp;
         if (!phone || !otp) return null;
 
-        // همه فیلدهای کاربر را می‌گیریم (شامل slug)
-        const user = await prisma.user.findUnique({ where: { phone } });
-        if (!user) return null;
+        // 1) چک کردن OTP از جدول OTP
+        const otpRecord = await prisma.oTP.findUnique({
+          where: { phone },
+        });
+        if (!otpRecord) return null;
 
-        const isBypass = otp === "bypass";
-        const now = new Date();
-        if (!isBypass) {
-          if (!user.otp || !user.otpExpiry || user.otp !== otp || user.otpExpiry < now) {
-            return null;
-          }
-          await prisma.user.update({
-            where: { phone },
-            data: { otp: null, otpExpiry: null },
+        // چک کردن اعتبار کد (۵ دقیقه اعتبار)
+        const expiry = new Date(otpRecord.createdAt.getTime() + 5 * 60000);
+        if (otpRecord.code !== otp || expiry < new Date()) {
+          return null;
+        }
+
+        // 2) پیدا کردن یا ساختن کاربر
+        let user = await prisma.user.findUnique({
+          where: { phone },
+        });
+
+        if (!user) {
+          user = await prisma.user.create({
+            data: { phone },
           });
         }
 
-        // بازم همه فیلدهای لازم رو برمی‌گردونیم
+        // 3) پاک کردن کد OTP پس از استفاده
+        await prisma.oTP.delete({
+          where: { phone },
+        });
+
         return {
           id: user.id,
-          role: user.role,
           phone: user.phone,
+          role: user.role,
           email: user.email ?? null,
           image: user.image ?? null,
           firstName: user.firstName ?? null,
@@ -49,19 +62,22 @@ export const authOptions: AuthOptions = {
       },
     }),
   ],
+
   session: { strategy: "jwt" },
   jwt: { secret: process.env.NEXTAUTH_SECRET },
-  pages: { signIn: "/login", error: "/auth/error" },
+
+  pages: {
+    signIn: "/login",
+    error: "/auth/error",
+  },
+
   secret: process.env.NEXTAUTH_SECRET,
+
   callbacks: {
-    // در jwt، فیلد slug هم منتقل می‌شود
     async jwt({ token, user }) {
-      if (user) {
-        return { ...token, ...user };
-      }
+      if (user) return { ...token, ...user };
       return token;
     },
-    // در session، session.user را از token می‌سازیم (شامل slug)
     async session({ session, token }) {
       session.user = token as unknown as Session["user"];
       return session;

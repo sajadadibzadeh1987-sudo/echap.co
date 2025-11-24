@@ -1,46 +1,59 @@
 // src/app/api/send-otp/route.ts
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import { sendOtp } from "@/lib/sendOtp";
+
+function normalizeRequestPhone(raw: unknown): string {
+  const phone = (raw ?? "").toString().trim();
+
+  if (!phone) {
+    throw new Error("شماره وارد نشده است");
+  }
+
+  // فرمت 11 رقمی با 0 در ابتدای شماره (مثل 0912...)
+  const regex = /^0\d{10}$/;
+  if (!regex.test(phone)) {
+    throw new Error("فرمت شماره موبایل صحیح نیست");
+  }
+
+  return phone;
+}
 
 export async function POST(req: Request) {
-  // فقط شماره موبایل را از body می‌خوانیم
-  const { phone }: { phone?: string } = await req.json();
-  const trimmedPhone = phone?.trim();
+  try {
+    const body = await req.json();
+    const phone = normalizeRequestPhone(body.phone);
 
-  if (!trimmedPhone) {
+    // ساخت کد ۶ رقمی
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // صرفاً برای دیباگ
+    console.log("📲 کد تایید برای", phone + ":", otpCode);
+
+    // ۱) ذخیره / به‌روزرسانی کد در دیتابیس با Prisma
+    await prisma.oTP.upsert({
+      where: { phone },
+      update: { code: otpCode, createdAt: new Date() },
+      create: { phone, code: otpCode, createdAt: new Date() },
+    });
+
+    // ۲) ارسال پیامک واقعی با Edge API جدید
+    console.log(">>> BEFORE_SEND_OTP", phone, otpCode);
+    await sendOtp(phone, otpCode);
+    console.log(">>> AFTER_SEND_OTP", phone, otpCode);
+
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("SEND_OTP_ROUTE_ERROR", err);
+
+    const message =
+      err instanceof Error && err.message
+        ? err.message
+        : "خطا در ارسال کد تایید. لطفا بعدا دوباره تلاش کنید.";
+
     return NextResponse.json(
-      { error: "شماره وارد نشده" },
+      { success: false, message },
       { status: 400 }
     );
   }
-
-  // تولید کد شش رقمی و زمان انقضاء
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const expiry = new Date(Date.now() + 2 * 60 * 1000); // ۲ دقیقه
-
-  const existingUser = await prisma.user.findUnique({
-    where: { phone: trimmedPhone },
-  });
-
-  if (existingUser) {
-    // اگر کاربر قبلاً ثبت‌نام کرده، فقط OTP را به‌روز کن
-    await prisma.user.update({
-      where: { phone: trimmedPhone },
-      data: { otp, otpExpiry: expiry },
-    });
-  } else {
-    // کاربر جدید با نقش پیش‌فرض "user"
-    await prisma.user.create({
-      data: {
-        phone: trimmedPhone,
-        otp,
-        otpExpiry: expiry,
-        // نقش به‌صورت پیش‌فرض در مدل User = "user"
-      },
-    });
-  }
-
-  console.log(`📲 کد تایید برای ${trimmedPhone}: ${otp}`);
-
-  return NextResponse.json({ success: true });
 }

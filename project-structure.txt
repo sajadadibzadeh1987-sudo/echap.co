@@ -6,7 +6,6 @@
 │   │   ├── ads/
 │   │   │   ├── route.ts
 │   │   │   ├── [id]/
-│   │   │   │   ├── page.tsx
 │   │   ├── auth/
 │   │   │   ├── error/
 │   │   │   │   ├── page.tsx
@@ -96,6 +95,7 @@
 │   ├── MapPicker.tsx
 │   ├── modals/
 │   │   ├── RoleSelectModal.tsx
+│   ├── PrinterProfileForm.tsx
 │   ├── profile/
 │   │   ├── ProfileEditModal.tsx
 │   │   ├── update/
@@ -124,6 +124,7 @@
 │   ├── api.ts
 │   ├── auth.ts
 │   ├── prisma.ts
+│   ├── sendOtp.ts
 │   ├── toast.ts
 │   ├── utils.ts
 ├── types/
