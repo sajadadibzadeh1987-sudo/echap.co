@@ -76,6 +76,7 @@
 │   │   ├── LoginForm.tsx
 │   │   ├── LoginWithOtpForm.tsx
 │   │   ├── RoleSelectModal.tsx
+│   │   ├── SessionActivityWatcher.tsx
 │   ├── BusinessProfileForm.tsx
 │   ├── common/
 │   │   ├── DialogWrapper.tsx
@@ -92,6 +93,9 @@
 │   │   ├── UserInfo.tsx
 │   ├── layout/
 │   │   ├── DashboardLayout.tsx
+│   │   ├── MobileBottomNav.tsx
+│   │   ├── MobileSearchBar.tsx
+│   │   ├── SiteHeader.tsx
 │   ├── MapPicker.tsx
 │   ├── modals/
 │   │   ├── RoleSelectModal.tsx

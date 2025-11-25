@@ -5,4 +5,5 @@ export interface JobAd {
   category: string;
   phone: string;
   createdAt?: string;
+  images: string[]; // 👈 اضافه شد
 }

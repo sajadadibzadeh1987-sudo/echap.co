@@ -2,8 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
-import { showSuccess, showError } from "@/lib/toast"; // وارد کردن توابع برای پیام‌ها
+import { showSuccess, showError } from "@/lib/toast";
+import JobAdImagesUploader from "@/components/dashboard/JobAdImagesUploader";
 
 export default function CreateJobAdPage() {
   const router = useRouter();
@@ -14,65 +14,64 @@ export default function CreateJobAdPage() {
   const [phone, setPhone] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files) return;
-    const newFiles = Array.from(e.target.files);
-
-    // محدود کردن به ۵ تصویر
-    if (newFiles.length + images.length > 5) {
-      showError("❌ تعداد مجاز تصاویر بیشتر از ۵ نیست");
-      return;
-    }
-
-    const combined = [...images, ...newFiles].slice(0, 5); // حداکثر ۵ تصویر
-    setImages(combined);
-  };
-
-  const handleRemoveImage = (indexToRemove: number) => {
-    setImages((prev) => {
-      const updated = prev.filter((_, index) => index !== indexToRemove);
-      if (mainImageIndex === indexToRemove) {
-        setMainImageIndex(null);
-      } else if (mainImageIndex !== null && indexToRemove < mainImageIndex) {
-        setMainImageIndex(mainImageIndex - 1);
-      }
-      return updated;
-    });
-  };
-
-  const handleSelectMainImage = (index: number) => {
-    setMainImageIndex(index);
-    showSuccess("⭐ تصویر اصلی انتخاب شد");
-  };
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("category", category);
-    formData.append("phone", phone);
-
-    images.forEach((img) => {
-      formData.append("images", img);
-    });
-
-    if (mainImageIndex !== null) {
-      formData.append("mainImageIndex", mainImageIndex.toString());
+    if (!title || !description || !category || !phone) {
+      showError("لطفاً تمام فیلدها را تکمیل کنید");
+      return;
     }
 
-    const res = await fetch("/api/jobads", {
-      method: "POST",
-      body: formData,
-    });
+    if (images.length === 0) {
+      // اگر دوست داری بدون تصویر هم مجاز باشد، این بخش را می‌توانی کامنت کنی
+      showError("حداقل یک تصویر برای آگهی انتخاب کنید");
+      return;
+    }
 
-    if (res.ok) {
-      showSuccess("✅ آگهی با موفقیت ثبت شد"); // نمایش پیام موفقیت
-      router.push("/dashboard/jobads/my"); // هدایت به صفحه آگهی‌های من
-    } else {
-      showError("❌ ثبت آگهی با خطا مواجه شد"); // نمایش پیام خطا
+    setIsSubmitting(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("title", title);
+      formData.append("description", description);
+      formData.append("category", category);
+      formData.append("phone", phone);
+
+      images.forEach((img) => {
+        formData.append("images", img);
+      });
+
+      if (mainImageIndex !== null) {
+        formData.append("mainImageIndex", mainImageIndex.toString());
+      }
+
+      const res = await fetch("/api/jobads", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (res.ok) {
+        showSuccess("✅ آگهی با موفقیت ثبت شد");
+        // ریست فرم
+        setTitle("");
+        setDescription("");
+        setCategory("");
+        setPhone("");
+        setImages([]);
+        setMainImageIndex(null);
+
+        router.push("/dashboard/jobads/my");
+      } else {
+        const data = await res.json().catch(() => null);
+        showError(data?.error || "❌ ثبت آگهی با خطا مواجه شد");
+      }
+    } catch (err) {
+      console.error("❌ خطا در ثبت آگهی:", err);
+      showError("❌ خطای غیرمنتظره در ثبت آگهی");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -84,80 +83,58 @@ export default function CreateJobAdPage() {
         <input
           type="text"
           placeholder="عنوان آگهی"
-          className="w-full border p-2 rounded"
+          className="w-full border p-2 rounded text-sm"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
+
         <textarea
           placeholder="توضیحات"
-          className="w-full border p-2 rounded"
+          className="w-full border p-2 rounded text-sm min-h-[120px]"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
         />
+
         <input
           type="text"
-          placeholder="دسته‌بندی"
-          className="w-full border p-2 rounded"
+          placeholder="دسته‌بندی (مثلاً: استخدام، چاپخانه، فریلنسر...)"
+          className="w-full border p-2 rounded text-sm"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
           required
         />
+
         <input
           type="text"
           placeholder="شماره تماس"
-          className="w-full border p-2 rounded"
+          className="w-full border p-2 rounded text-sm"
           value={phone}
           onChange={(e) => setPhone(e.target.value)}
           required
         />
 
-        <input
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={handleImageChange}
-          className="w-full"
-        />
-
-        {images.length > 0 && (
-          <div className="grid grid-cols-3 gap-3 mt-4">
-            {images.map((img, index) => (
-              <div
-                key={index}
-                className={`relative w-full h-24 border rounded overflow-hidden ${
-                  mainImageIndex === index ? "ring-2 ring-blue-600" : ""
-                }`}
-              >
-                <Image
-                  src={URL.createObjectURL(img)}
-                  alt={`img-${index}`}
-                  fill
-                  unoptimized
-                  className="object-cover"
-                  onClick={() => handleSelectMainImage(index)}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleRemoveImage(index)}
-                  className="absolute top-0 right-0 bg-red-600 text-white text-xs px-1 rounded-bl"
-                >
-                  حذف
-                </button>
-                <span className="absolute bottom-0 left-0 bg-white text-xs px-1 rounded-tr text-gray-600">
-                  {mainImageIndex === index ? "⭐ اصلی" : "انتخاب"}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* آپلودر حرفه‌ای تصاویر آگهی */}
+        <div>
+          <label className="block text-sm font-medium mb-2">
+            تصاویر آگهی
+          </label>
+          <JobAdImagesUploader
+            images={images}
+            onImagesChange={setImages}
+            mainImageIndex={mainImageIndex}
+            onMainImageIndexChange={setMainImageIndex}
+            maxImages={5}
+          />
+        </div>
 
         <button
           type="submit"
-          className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 transition"
+          disabled={isSubmitting}
+          className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 transition text-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          ثبت آگهی
+          {isSubmitting ? "در حال ثبت آگهی..." : "ثبت آگهی"}
         </button>
       </form>
     </div>
