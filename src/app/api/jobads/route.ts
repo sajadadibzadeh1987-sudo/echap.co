@@ -49,7 +49,14 @@ export async function POST(req: NextRequest) {
     const limitedFiles = files.slice(0, MAX_FILES);
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const thumbDir = path.join(uploadDir, "thumbs");
+
     await mkdir(uploadDir, { recursive: true });
+    await mkdir(thumbDir, { recursive: true });
+
+    // sharp را دینامیک ایمپورت می‌کنیم
+    const sharpModule = await import("sharp");
+    const sharp = sharpModule.default;
 
     const imageUrls: string[] = [];
 
@@ -73,9 +80,24 @@ export async function POST(req: NextRequest) {
       const buffer = Buffer.from(await file.arrayBuffer());
       const ext = path.extname(file.name) || ".jpg";
       const filename = `${uuidv4()}${ext}`;
-      const filepath = path.join(uploadDir, filename);
 
+      const filepath = path.join(uploadDir, filename);
+      const thumbPath = path.join(thumbDir, filename);
+
+      // ذخیره نسخه اصلی
       await writeFile(filepath, buffer);
+
+      // ساخت thumbnail
+      try {
+        await sharp(buffer)
+          .resize(400, 400, {
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .toFile(thumbPath);
+      } catch (err) {
+        console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
+      }
 
       imageUrls.push(`/uploads/${filename}`);
     }

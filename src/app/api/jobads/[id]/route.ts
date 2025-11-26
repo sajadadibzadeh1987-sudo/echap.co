@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import path from "path";
-import { writeFile, unlink } from "fs/promises";
+import { writeFile, mkdir } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -45,7 +45,7 @@ export async function GET(
 }
 
 /* ------------------------------------------------------
-   🟩 PATCH — ویرایش تصاویر آگهی (نسخه اصلیِ خودت، بدون sharp)
+   🟩 PATCH — ویرایش تصاویر آگهی + ساخت thumbnail
 --------------------------------------------------------*/
 export async function PATCH(
   req: NextRequest,
@@ -60,8 +60,9 @@ export async function PATCH(
     const { id } = params;
 
     const jobAd = await prisma.jobAd.findUnique({ where: { id } });
-    if (!jobAd)
+    if (!jobAd) {
       return NextResponse.json({ error: "not_found" }, { status: 404 });
+    }
 
     if (jobAd.userId !== session.user.id) {
       return NextResponse.json({ error: "forbidden" }, { status: 403 });
@@ -81,6 +82,15 @@ export async function PATCH(
       .filter((f) => f instanceof File) as File[];
 
     const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const thumbDir = path.join(uploadDir, "thumbs");
+
+    // اطمینان از وجود فولدرها
+    await mkdir(uploadDir, { recursive: true });
+    await mkdir(thumbDir, { recursive: true });
+
+    // sharp را دینامیک ایمپورت می‌کنیم
+    const sharpModule = await import("sharp");
+    const sharp = sharpModule.default;
 
     const newImageUrls: string[] = [];
 
@@ -88,10 +98,26 @@ export async function PATCH(
       const buffer = Buffer.from(await file.arrayBuffer());
       const ext = path.extname(file.name) || ".jpg";
       const filename = `${uuidv4()}${ext}`;
-      const filepath = path.join(uploadDir, filename);
 
-      await writeFile(filepath, buffer);
+      const originalPath = path.join(uploadDir, filename);
+      const thumbPath = path.join(thumbDir, filename);
 
+      // ذخیره نسخه اصلی
+      await writeFile(originalPath, buffer);
+
+      // ساخت thumbnail (مثلاً حداکثر 400px)
+      try {
+        await sharp(buffer)
+          .resize(400, 400, {
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .toFile(thumbPath);
+      } catch (err) {
+        console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
+      }
+
+      // لینک نسخه اصلی در DB ذخیره می‌شود
       newImageUrls.push(`/uploads/${filename}`);
     }
 
@@ -100,17 +126,9 @@ export async function PATCH(
       (img) => !existingImages.includes(img)
     );
 
-    for (const url of removedImages) {
-      try {
-        const filePath = path.join(
-          process.cwd(),
-          "public",
-          url.replace(/^\/+/, "")
-        );
-        await unlink(filePath);
-      } catch (err) {
-        console.log("⚠️ حذف فایل ناموفق:", err);
-      }
+    // حذف امن تصاویر قدیمی (اصل + thumbnail) از طریق deleteImageSafe
+    if (removedImages.length > 0) {
+      await Promise.all(removedImages.map((img) => deleteImageSafe(img)));
     }
 
     let finalImages = [...existingImages, ...newImageUrls];
@@ -185,7 +203,7 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ DELETE /jobads/[id] error:", error);
+    console.error("❌ DELETE jobAd error:", error);
     return NextResponse.json(
       { error: "حذف ناموفق بود" },
       { status: 500 }
