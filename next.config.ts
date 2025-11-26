@@ -8,7 +8,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-
+  // مهم برای تصاویر (به‌خصوص روی سرور)
+  images: {
+    unoptimized: true,
+  },
   // اگر تنظیمات دیگری داشتی و می‌خوای نگه داری، بعداً اضافه می‌کنیم
 };
 

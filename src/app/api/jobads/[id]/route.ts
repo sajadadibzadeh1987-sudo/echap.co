@@ -5,6 +5,7 @@ import { writeFile, unlink } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { deleteImageSafe } from "@/lib/imageFiles";
 
 /* ------------------------------------------------------
    🟩 GET — دریافت یک آگهی بر اساس ID
@@ -34,7 +35,6 @@ export async function GET(
         "Cache-Control": "no-store",
       },
     });
-
   } catch (error) {
     console.error("❌ GET /jobads/[id] error:", error);
     return NextResponse.json(
@@ -45,7 +45,7 @@ export async function GET(
 }
 
 /* ------------------------------------------------------
-   🟩 PATCH — ویرایش تصاویر آگهی
+   🟩 PATCH — ویرایش تصاویر آگهی (نسخه اصلیِ خودت، بدون sharp)
 --------------------------------------------------------*/
 export async function PATCH(
   req: NextRequest,
@@ -95,6 +95,7 @@ export async function PATCH(
       newImageUrls.push(`/uploads/${filename}`);
     }
 
+    // تشخیص تصاویر حذف‌شده
     const removedImages = jobAd.images.filter(
       (img) => !existingImages.includes(img)
     );
@@ -114,6 +115,7 @@ export async function PATCH(
 
     let finalImages = [...existingImages, ...newImageUrls];
 
+    // قرار دادن تصویر اصلی در ابتدای آرایه
     if (
       mainIndex !== null &&
       mainIndex >= 0 &&
@@ -139,13 +141,21 @@ export async function PATCH(
 }
 
 /* ------------------------------------------------------
-   🟥 DELETE — حذف آگهی + حذف تصاویر از سرور
+   🟥 DELETE — حذف آگهی + حذف تصاویر از سرور (با deleteImageSafe)
 --------------------------------------------------------*/
 export async function DELETE(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const jobAd = await prisma.jobAd.findUnique({
       where: { id: params.id },
     });
@@ -157,22 +167,25 @@ export async function DELETE(
       );
     }
 
-    const publicRoot = path.join(process.cwd(), "public");
-
-    for (const image of jobAd.images) {
-      try {
-        const filePath = path.join(publicRoot, image.replace(/^\/+/, ""));
-        await unlink(filePath);
-      } catch (err) {
-        console.warn("⚠️ حذف تصویر ناموفق:", err);
-      }
+    // فقط صاحب آگهی حق حذف دارد
+    if (jobAd.userId !== session.user.id) {
+      return NextResponse.json(
+        { error: "forbidden" },
+        { status: 403 }
+      );
     }
 
+    const images = jobAd.images ?? [];
+
+    // حذف امن تمام فایل‌های مرتبط با این آگهی از VPS
+    await Promise.all(images.map((img) => deleteImageSafe(img)));
+
+    // حذف رکورد آگهی از دیتابیس
     await prisma.jobAd.delete({ where: { id: params.id } });
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error("❌ DELETE jobAd error:", error);
+    console.error("❌ DELETE /jobads/[id] error:", error);
     return NextResponse.json(
       { error: "حذف ناموفق بود" },
       { status: 500 }
