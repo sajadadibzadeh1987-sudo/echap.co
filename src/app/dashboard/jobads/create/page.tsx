@@ -16,17 +16,35 @@ export default function CreateJobAdPage() {
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // به‌جای true/false، پیام خطا نگه می‌داریم
+  const [errors, setErrors] = useState<{
+    title?: string;
+    description?: string;
+    category?: string;
+    phone?: string;
+    images?: string;
+  }>({});
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
 
-    if (!title || !description || !category || !phone) {
-      showError("لطفاً تمام فیلدها را تکمیل کنید");
-      return;
-    }
+    const newErrors: typeof errors = {};
 
-    if (images.length === 0) {
-      // اگر دوست داری بدون تصویر هم مجاز باشد، این بخش را می‌توانی کامنت کنی
-      showError("حداقل یک تصویر برای آگهی انتخاب کنید");
+    // ولیدیشن دستی + پیام زیر هر فیلد
+    if (!title.trim()) newErrors.title = "لطفاً عنوان آگهی را وارد کنید";
+    if (!description.trim())
+      newErrors.description = "لطفاً توضیحات آگهی را وارد کنید";
+    if (!category.trim())
+      newErrors.category = "لطفاً دسته‌بندی آگهی را مشخص کنید";
+    if (!phone.trim()) newErrors.phone = "لطفاً شماره تماس را وارد کنید";
+    if (images.length === 0)
+      newErrors.images = "لطفاً حداقل یک تصویر برای آگهی انتخاب کنید";
+
+    setErrors(newErrors);
+
+    // اگر هر پیغامی وجود دارد، فرم را ارسال نکن
+    if (Object.keys(newErrors).length > 0) {
       return;
     }
 
@@ -34,14 +52,12 @@ export default function CreateJobAdPage() {
 
     try {
       const formData = new FormData();
-      formData.append("title", title);
-      formData.append("description", description);
-      formData.append("category", category);
-      formData.append("phone", phone);
+      formData.append("title", title.trim());
+      formData.append("description", description.trim());
+      formData.append("category", category.trim());
+      formData.append("phone", phone.trim());
 
-      images.forEach((img) => {
-        formData.append("images", img);
-      });
+      images.forEach((img) => formData.append("images", img));
 
       if (mainImageIndex !== null) {
         formData.append("mainImageIndex", mainImageIndex.toString());
@@ -52,24 +68,30 @@ export default function CreateJobAdPage() {
         body: formData,
       });
 
-      if (res.ok) {
-        showSuccess("✅ آگهی با موفقیت ثبت شد");
-        // ریست فرم
-        setTitle("");
-        setDescription("");
-        setCategory("");
-        setPhone("");
-        setImages([]);
-        setMainImageIndex(null);
+      if (!res.ok) {
+        let msg = "ثبت آگهی با خطا مواجه شد.";
 
-        router.push("/dashboard/jobads/my");
-      } else {
-        const data = await res.json().catch(() => null);
-        showError(data?.error || "❌ ثبت آگهی با خطا مواجه شد");
+        try {
+          const data = await res.json();
+          if (data?.error) msg = data.error as string;
+        } catch {
+          if (res.status === 413) {
+            msg =
+              "حجم تصاویر بیش از حد مجاز است. لطفاً تصاویر را کم‌حجم‌تر یا تعدادشان را کمتر کنید.";
+          } else if (res.status >= 500) {
+            msg = "خطای سرور. لطفاً کمی بعد دوباره تلاش کنید.";
+          }
+        }
+
+        showError(msg);
+        return;
       }
+
+      showSuccess("آگهی با موفقیت ثبت شد ✅");
+      router.push("/dashboard/jobads/my");
     } catch (err) {
-      console.error("❌ خطا در ثبت آگهی:", err);
-      showError("❌ خطای غیرمنتظره در ثبت آگهی");
+      console.error("❌ خطای ثبت آگهی:", err);
+      showError("خطای غیرمنتظره در ثبت آگهی. لطفاً بعداً دوباره تلاش کنید.");
     } finally {
       setIsSubmitting(false);
     }
@@ -79,44 +101,79 @@ export default function CreateJobAdPage() {
     <div className="max-w-xl mx-auto p-6 bg-white shadow rounded" dir="rtl">
       <h1 className="text-2xl font-bold mb-6">➕ درج آگهی</h1>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <input
-          type="text"
-          placeholder="عنوان آگهی"
-          className="w-full border p-2 rounded text-sm"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          required
-        />
-
-        <textarea
-          placeholder="توضیحات"
-          className="w-full border p-2 rounded text-sm min-h-[120px]"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="دسته‌بندی (مثلاً: استخدام، چاپخانه، فریلنسر...)"
-          className="w-full border p-2 rounded text-sm"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-          required
-        />
-
-        <input
-          type="text"
-          placeholder="شماره تماس"
-          className="w-full border p-2 rounded text-sm"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          required
-        />
-
-        {/* آپلودر حرفه‌ای تصاویر آگهی */}
+      {/* ولیدیشن مرورگر خاموش */}
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
+        {/* عنوان */}
         <div>
+          <input
+            type="text"
+            placeholder="عنوان آگهی"
+            className={`w-full border p-2 rounded text-sm ${
+              errors.title ? "border-red-500 bg-red-50" : "border-gray-300"
+            }`}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          {errors.title && (
+            <p className="text-xs text-red-600 mt-1">{errors.title}</p>
+          )}
+        </div>
+
+        {/* توضیحات */}
+        <div>
+          <textarea
+            placeholder="توضیحات"
+            className={`w-full border p-2 rounded text-sm min-h-[120px] ${
+              errors.description
+                ? "border-red-500 bg-red-50"
+                : "border-gray-300"
+            }`}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+          />
+          {errors.description && (
+            <p className="text-xs text-red-600 mt-1">{errors.description}</p>
+          )}
+        </div>
+
+        {/* دسته‌بندی */}
+        <div>
+          <input
+            type="text"
+            placeholder="دسته‌بندی (مثلاً: استخدام، چاپخانه، فریلنسر...)"
+            className={`w-full border p-2 rounded text-sm ${
+              errors.category ? "border-red-500 bg-red-50" : "border-gray-300"
+            }`}
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          />
+          {errors.category && (
+            <p className="text-xs text-red-600 mt-1">{errors.category}</p>
+          )}
+        </div>
+
+        {/* شماره تماس */}
+        <div>
+          <input
+            type="text"
+            placeholder="شماره تماس"
+            className={`w-full border p-2 rounded text-sm ${
+              errors.phone ? "border-red-500 bg-red-50" : "border-gray-300"
+            }`}
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+          />
+          {errors.phone && (
+            <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
+          )}
+        </div>
+
+        {/* تصاویر */}
+        <div
+          className={`p-2 rounded ${
+            errors.images ? "border border-red-500 bg-red-50" : ""
+          }`}
+        >
           <label className="block text-sm font-medium mb-2">
             تصاویر آگهی
           </label>
@@ -127,6 +184,9 @@ export default function CreateJobAdPage() {
             onMainImageIndexChange={setMainImageIndex}
             maxImages={5}
           />
+          {errors.images && (
+            <p className="text-xs text-red-600 mt-1">{errors.images}</p>
+          )}
         </div>
 
         <button
@@ -134,7 +194,7 @@ export default function CreateJobAdPage() {
           disabled={isSubmitting}
           className="w-full bg-blue-700 text-white py-2 rounded hover:bg-blue-800 transition text-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? "در حال ثبت آگهی..." : "ثبت آگهی"}
+          {isSubmitting ? "در حال ثبت..." : "ثبت آگهی"}
         </button>
       </form>
     </div>

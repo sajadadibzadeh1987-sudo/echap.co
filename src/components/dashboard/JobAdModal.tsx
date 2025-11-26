@@ -1,18 +1,23 @@
 "use client";
 
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { JobAd } from "@/types/jobAd";
-import { showSuccess } from "@/lib/toast"; // ✅ اضافه شد
+import { showSuccess, showError } from "@/lib/toast";
 
 interface JobAdModalProps {
   isOpen: boolean;
   onClose: () => void;
   mode: "edit" | "delete" | "upgrade";
   ad: JobAd;
-  onUpdate?: (updated: JobAd) => void;
-  onDelete?: (id: string) => void;
-  onUpgrade?: (id: string) => void;
+  /**
+   * اگر تابع یکی از این‌ها مقدار false برگرداند،
+   * یعنی عملیات موفق نبوده و نباید success و onClose صدا زده شود.
+   * اگر چیزی برنگرداند (void)، موفق در نظر گرفته می‌شود.
+   */
+  onUpdate?: (updated: JobAd) => Promise<boolean | void> | boolean | void;
+  onDelete?: (id: string) => Promise<boolean | void> | boolean | void;
+  onUpgrade?: (id: string) => Promise<boolean | void> | boolean | void;
 }
 
 const JobAdModal: FC<JobAdModalProps> = ({
@@ -24,20 +29,55 @@ const JobAdModal: FC<JobAdModalProps> = ({
   onDelete,
   onUpgrade,
 }) => {
-  const [form, setForm] = useState(ad);
+  const [form, setForm] = useState<JobAd>(ad);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = () => {
-    if (mode === "edit") {
-      onUpdate?.(form);
-      showSuccess("آگهی با موفقیت ویرایش شد");
-    } else if (mode === "delete") {
-      onDelete?.(ad.id);
-      showSuccess("🗑️ آگهی با موفقیت حذف شد");
-    } else if (mode === "upgrade") {
-      onUpgrade?.(ad.id);
-      showSuccess("🔝 آگهی با موفقیت ارتقا یافت");
+  // هر وقت آگهی ورودی عوض شد، فرم هم sync شود
+  useEffect(() => {
+    setForm(ad);
+  }, [ad]);
+
+  const handleSubmit = async () => {
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+
+      let ok = true;
+
+      if (mode === "edit" && onUpdate) {
+        const result = await onUpdate(form);
+        if (result === false) ok = false;
+      } else if (mode === "delete" && onDelete) {
+        const result = await onDelete(ad.id);
+        if (result === false) ok = false;
+      } else if (mode === "upgrade" && onUpgrade) {
+        const result = await onUpgrade(ad.id);
+        if (result === false) ok = false;
+      }
+
+      if (!ok) {
+        // یعنی callback خودش تشخیص داده که عملیات موفق نبوده
+        showError("عملیات انجام نشد. لطفاً دوباره تلاش کنید.");
+        return;
+      }
+
+      // اگر به اینجا رسیدیم یعنی عملیات موفق بوده
+      if (mode === "edit") {
+        showSuccess("آگهی با موفقیت ویرایش شد");
+      } else if (mode === "delete") {
+        showSuccess("🗑️ آگهی با موفقیت حذف شد");
+      } else if (mode === "upgrade") {
+        showSuccess("🔝 آگهی با موفقیت ارتقا یافت");
+      }
+
+      onClose();
+    } catch (error) {
+      console.error("JobAdModal handleSubmit error:", error);
+      showError("خطای غیرمنتظره در ارتباط با سرور. لطفاً بعداً دوباره تلاش کنید.");
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   return (
@@ -103,11 +143,13 @@ const JobAdModal: FC<JobAdModalProps> = ({
               <button
                 onClick={onClose}
                 className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-sm"
+                disabled={isSubmitting}
               >
                 انصراف
               </button>
               <button
                 onClick={handleSubmit}
+                disabled={isSubmitting}
                 className={`px-4 py-2 rounded text-white text-sm ${
                   mode === "delete"
                     ? "bg-red-600 hover:bg-red-700"
@@ -116,7 +158,9 @@ const JobAdModal: FC<JobAdModalProps> = ({
                     : "bg-blue-600 hover:bg-blue-700"
                 }`}
               >
-                {mode === "edit"
+                {isSubmitting
+                  ? "در حال انجام..."
+                  : mode === "edit"
                   ? "ذخیره تغییرات"
                   : mode === "delete"
                   ? "حذف"

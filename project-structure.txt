@@ -18,6 +18,8 @@
 │   │   ├── jobads/
 │   │   │   ├── route.ts
 │   │   │   ├── [id]/
+│   │   │   │   ├── images/
+│   │   │   │   │   ├── route.ts
 │   │   │   │   ├── route.ts
 │   │   ├── me/
 │   │   │   ├── route.ts
@@ -45,6 +47,9 @@
 │   │   ├── jobads/
 │   │   │   ├── create/
 │   │   │   │   ├── page.tsx
+│   │   │   ├── edit-images/
+│   │   │   │   ├── [id]/
+│   │   │   │   │   ├── page.tsx
 │   │   │   ├── my/
 │   │   │   │   ├── page.tsx
 │   │   ├── layout.tsx
@@ -82,6 +87,8 @@
 │   │   ├── DialogWrapper.tsx
 │   ├── dashboard/
 │   │   ├── FreelancerDashboard.tsx
+│   │   ├── JobAdImagesEditor.tsx
+│   │   ├── JobAdImagesUploader.tsx
 │   │   ├── JobAdModal.tsx
 │   │   ├── PrinterProfileForm.tsx
 │   │   ├── Sidebar.tsx
@@ -127,6 +134,7 @@
 ├── lib/
 │   ├── api.ts
 │   ├── auth.ts
+│   ├── imageFiles.ts
 │   ├── prisma.ts
 │   ├── sendOtp.ts
 │   ├── toast.ts
