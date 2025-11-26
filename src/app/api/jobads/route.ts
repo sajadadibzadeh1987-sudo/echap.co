@@ -48,20 +48,8 @@ export async function POST(req: NextRequest) {
     // محدود کردن تعداد
     const limitedFiles = files.slice(0, MAX_FILES);
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    const thumbDir = path.join(uploadDir, "thumbs");
-
-    await mkdir(uploadDir, { recursive: true });
-    await mkdir(thumbDir, { recursive: true });
-
-    // sharp را دینامیک ایمپورت می‌کنیم
-    const sharpModule = await import("sharp");
-    const sharp = sharpModule.default;
-
-    const imageUrls: string[] = [];
-
+    // اگر عکس هست، قبل از هرچیز فرمت و حجم همه‌شون رو چک کن (سریع)
     for (const file of limitedFiles) {
-      // چک کردن نوع فایل
       if (!ALLOWED_TYPES.includes(file.type)) {
         return NextResponse.json(
           { error: "فرمت تصویر مجاز نیست (فقط JPG/PNG/WEBP/GIF/AVIF)" },
@@ -69,40 +57,52 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // چک کردن سایز فایل
       if (file.size > MAX_FILE_SIZE) {
         return NextResponse.json(
           { error: "حجم هر تصویر نباید بیشتر از ۵ مگابایت باشد" },
           { status: 400 }
         );
       }
-
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const ext = path.extname(file.name) || ".jpg";
-      const filename = `${uuidv4()}${ext}`;
-
-      const filepath = path.join(uploadDir, filename);
-      const thumbPath = path.join(thumbDir, filename);
-
-      // ذخیره نسخه اصلی
-      await writeFile(filepath, buffer);
-
-      // ساخت thumbnail
-      try {
-        await sharp(buffer)
-          .resize(400, 400, {
-            fit: "inside",
-            withoutEnlargement: true,
-          })
-          .toFile(thumbPath);
-      } catch (err) {
-        console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
-      }
-
-      imageUrls.push(`/uploads/${filename}`);
     }
 
-    // اگر هیچ عکسی هم ارسال نشود، مشکلی نیست.
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const thumbDir = path.join(uploadDir, "thumbs");
+
+    await mkdir(uploadDir, { recursive: true });
+    await mkdir(thumbDir, { recursive: true });
+
+    const sharpModule = await import("sharp");
+    const sharp = sharpModule.default;
+
+    // 🧠 ذخیره و ساخت thumbnail برای همه تصاویر به صورت همزمان
+    const imageUrls: string[] = await Promise.all(
+      limitedFiles.map(async (file) => {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const ext = path.extname(file.name) || ".jpg";
+        const filename = `${uuidv4()}${ext}`;
+
+        const filepath = path.join(uploadDir, filename);
+        const thumbPath = path.join(thumbDir, filename);
+
+        // نسخه اصلی
+        await writeFile(filepath, buffer);
+
+        // thumbnail
+        try {
+          await sharp(buffer)
+            .resize(400, 400, {
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .toFile(thumbPath);
+        } catch (err) {
+          console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
+        }
+
+        return `/uploads/${filename}`;
+      })
+    );
+
     let finalImageUrls = [...imageUrls];
 
     // پردازش تصویر اصلی بر اساس ایندکس

@@ -9,7 +9,6 @@ import { deleteImageSafe } from "@/lib/imageFiles";
 
 /* ------------------------------------------------------
    🟩 GET — دریافت یک آگهی بر اساس ID
-   (برای صفحه ویرایش تصاویر + نمایش جزئیات)
 --------------------------------------------------------*/
 export async function GET(
   req: NextRequest,
@@ -27,7 +26,6 @@ export async function GET(
       );
     }
 
-    // جلوگیری از کش شدن
     return new NextResponse(JSON.stringify(ad), {
       status: 200,
       headers: {
@@ -45,7 +43,7 @@ export async function GET(
 }
 
 /* ------------------------------------------------------
-   🟩 PATCH — ویرایش تصاویر آگهی + ساخت thumbnail
+   🟩 PATCH — ویرایش تصاویر آگهی + ساخت thumbnail (پردازش موازی)
 --------------------------------------------------------*/
 export async function PATCH(
   req: NextRequest,
@@ -84,56 +82,50 @@ export async function PATCH(
     const uploadDir = path.join(process.cwd(), "public", "uploads");
     const thumbDir = path.join(uploadDir, "thumbs");
 
-    // اطمینان از وجود فولدرها
     await mkdir(uploadDir, { recursive: true });
     await mkdir(thumbDir, { recursive: true });
 
-    // sharp را دینامیک ایمپورت می‌کنیم
     const sharpModule = await import("sharp");
     const sharp = sharpModule.default;
 
-    const newImageUrls: string[] = [];
+    // ✅ همه فایل‌های جدید به صورت موازی ذخیره و thumbnail ساخته می‌شود
+    const newImageUrls: string[] = await Promise.all(
+      newFiles.map(async (file) => {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const ext = path.extname(file.name) || ".jpg";
+        const filename = `${uuidv4()}${ext}`;
 
-    for (const file of newFiles) {
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const ext = path.extname(file.name) || ".jpg";
-      const filename = `${uuidv4()}${ext}`;
+        const originalPath = path.join(uploadDir, filename);
+        const thumbPath = path.join(thumbDir, filename);
 
-      const originalPath = path.join(uploadDir, filename);
-      const thumbPath = path.join(thumbDir, filename);
+        await writeFile(originalPath, buffer);
 
-      // ذخیره نسخه اصلی
-      await writeFile(originalPath, buffer);
+        try {
+          await sharp(buffer)
+            .resize(400, 400, {
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .toFile(thumbPath);
+        } catch (err) {
+          console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
+        }
 
-      // ساخت thumbnail (مثلاً حداکثر 400px)
-      try {
-        await sharp(buffer)
-          .resize(400, 400, {
-            fit: "inside",
-            withoutEnlargement: true,
-          })
-          .toFile(thumbPath);
-      } catch (err) {
-        console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
-      }
-
-      // لینک نسخه اصلی در DB ذخیره می‌شود
-      newImageUrls.push(`/uploads/${filename}`);
-    }
+        return `/uploads/${filename}`;
+      })
+    );
 
     // تشخیص تصاویر حذف‌شده
     const removedImages = jobAd.images.filter(
       (img) => !existingImages.includes(img)
     );
 
-    // حذف امن تصاویر قدیمی (اصل + thumbnail) از طریق deleteImageSafe
     if (removedImages.length > 0) {
       await Promise.all(removedImages.map((img) => deleteImageSafe(img)));
     }
 
     let finalImages = [...existingImages, ...newImageUrls];
 
-    // قرار دادن تصویر اصلی در ابتدای آرایه
     if (
       mainIndex !== null &&
       mainIndex >= 0 &&
@@ -159,7 +151,7 @@ export async function PATCH(
 }
 
 /* ------------------------------------------------------
-   🟥 DELETE — حذف آگهی + حذف تصاویر از سرور (با deleteImageSafe)
+   🟥 DELETE — بدون تغییر، همون نسخه با deleteImageSafe
 --------------------------------------------------------*/
 export async function DELETE(
   req: NextRequest,
@@ -185,7 +177,6 @@ export async function DELETE(
       );
     }
 
-    // فقط صاحب آگهی حق حذف دارد
     if (jobAd.userId !== session.user.id) {
       return NextResponse.json(
         { error: "forbidden" },
@@ -195,10 +186,8 @@ export async function DELETE(
 
     const images = jobAd.images ?? [];
 
-    // حذف امن تمام فایل‌های مرتبط با این آگهی از VPS
     await Promise.all(images.map((img) => deleteImageSafe(img)));
 
-    // حذف رکورد آگهی از دیتابیس
     await prisma.jobAd.delete({ where: { id: params.id } });
 
     return NextResponse.json({ success: true });
