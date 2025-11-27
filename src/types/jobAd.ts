@@ -1,3 +1,5 @@
+export type JobAdStatus = "PENDING" | "PUBLISHED" | "REJECTED";
+
 export interface JobAd {
   id: string;
   title: string;
@@ -6,4 +8,7 @@ export interface JobAd {
   phone: string;
   createdAt?: string;
   images: string[]; // 👈 اضافه شد
+
+  status?: JobAdStatus; // 👈 optional برای سازگاری
+  // سایر فیلدها مثل createdAt, userId و...
 }

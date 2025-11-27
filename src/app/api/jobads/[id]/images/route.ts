@@ -1,7 +1,9 @@
 // src/app/api/jobads/[id]/images/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { deleteImageSafe, normalizeToFilename } from "@/lib/imageFiles";
+import { normalizeToFilename } from "@/lib/imageFiles";
+import { deleteImageSafe } from "@/lib/imageFilesServer";
+
 
 export async function PATCH(
   req: NextRequest,

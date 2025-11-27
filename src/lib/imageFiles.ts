@@ -1,67 +1,70 @@
 // src/lib/imageFiles.ts
-import fs from "fs/promises";
-import path from "path";
+// این فایل باید هم در کلاینت و هم در سرور قابل استفاده باشد
+// بنابراین هیچ استفاده‌ای از fs یا path در آن نداریم.
+
+export type ImageVariant = "original" | "thumb"
 
 /**
- * ورودی می‌تونه یکی از این حالت‌ها باشه:
- *  - "f1.jpg"
- *  - "uploads/f1.jpg"
- *  - "/uploads/f1.jpg"
- *  - "public/uploads/f1.jpg"
- * خروجی همیشه می‌شه فقط: "f1.jpg"
+ * نرمال‌سازی نام فایل از انواع ورودی‌ها:
+ * - URL کامل
+ * - مسیر /uploads/...
+ * - مسیر public/uploads/...
  */
-export function normalizeToFilename(raw: string): string {
-  let v = (raw || "").trim();
+export function normalizeToFilename(value: string | undefined | null): string {
+  if (!value) return ""
 
-  if (!v) return "";
+  let v = value.trim()
 
-  if (v.startsWith("public/")) {
-    v = v.slice("public/".length);
-  }
-
-  if (v.startsWith("/")) {
-    v = v.slice(1);
-  }
-
-  if (v.startsWith("uploads/")) {
-    v = v.slice("uploads/".length);
-  }
-
-  return v;
-}
-
-/**
- * از روی filename، آدرس public می‌سازد (برای نمایش در فرانت)
- * مثال: "f1.jpg" → "/uploads/f1.jpg"
- */
-export function buildPublicImageSrc(value: string): string {
-  const filename = normalizeToFilename(value);
-  if (!filename) return "/placeholder.png";
-  return `/uploads/${filename}`;
-}
-
-/**
- * آدرس absolut روی دیسک، برای وقتی بعداً خواستیم فایل رو حذف کنیم
- * مثال: "f1.jpg" → /project-root/public/uploads/f1.jpg
- */
-export function getAbsoluteImagePath(value: string): string {
-  const filename = normalizeToFilename(value);
-  return path.join(process.cwd(), "public", "uploads", filename);
-}
-
-/**
- * حذف امن فایل (اگر وجود نداشت، ارور جدی نده)
- */
-export async function deleteImageSafe(value: string): Promise<void> {
-  try {
-    const abs = getAbsoluteImagePath(value);
-    await fs.unlink(abs);
-  } catch (err: unknown) {
-    const error = err as NodeJS.ErrnoException;
-
-    // اگر فایل وجود نداشت (ENOENT)، نادیده بگیر
-    if (error.code !== "ENOENT") {
-      console.error("Error deleting image:", value, error.message);
+  // اگر URL کامل باشد
+  if (v.startsWith("http://") || v.startsWith("https://")) {
+    try {
+      const url = new URL(v)
+      v = url.pathname
+    } catch {
+      // اگر URL نامعتبر بود، همان را برمی‌گردانیم
+      return v
     }
   }
+
+  // حذف / ابتدایی
+  if (v.startsWith("/")) v = v.slice(1)
+
+  // حذف پوشه public/
+  if (v.startsWith("public/")) v = v.slice("public/".length)
+
+  // حذف uploads/ ابتدایی تا فقط نام فایل بماند
+  if (v.startsWith("uploads/")) v = v.slice("uploads/".length)
+
+  return v
+}
+
+/**
+ * ساخت آدرس عمومی برای نمایش تصویر در سایت
+ * (برای original و thumbnail)
+ */
+export function buildPublicImageSrc(
+  value: string | undefined | null,
+  variant: ImageVariant = "original"
+): string {
+  if (!value) return "/placeholder.png"
+
+  // اگر لینک کامل اینترنتی باشد
+  if (value.startsWith("http://") || value.startsWith("https://")) {
+    return value
+  }
+
+  let filename = normalizeToFilename(value)
+  if (!filename) return "/placeholder.png"
+
+  // اگر thumbnail خواستیم، پسوند _thumb اضافه می‌کنیم
+  if (variant === "thumb") {
+    const dot = filename.lastIndexOf(".")
+    if (dot >= 0) {
+      filename = filename.slice(0, dot) + "_thumb" + filename.slice(dot)
+    } else {
+      filename = filename + "_thumb"
+    }
+  }
+
+  return `/uploads/${filename}`
 }

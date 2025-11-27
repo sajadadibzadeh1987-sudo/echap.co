@@ -5,7 +5,7 @@ import { writeFile, mkdir } from "fs/promises";
 import { v4 as uuidv4 } from "uuid";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { deleteImageSafe } from "@/lib/imageFiles";
+import { deleteImageSafe } from "@/lib/imageFilesServer";
 
 /* ------------------------------------------------------
    🟩 GET — دریافت یک آگهی بر اساس ID

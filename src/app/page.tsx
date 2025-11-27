@@ -10,17 +10,21 @@ import {
   FaIndustry,
   FaTruckMoving,
   FaFolderOpen,
-  FaPlus
+  FaPlus,
 } from 'react-icons/fa'
 import AdCard from '@/components/AdCard'
 
+// وضعیت آگهی
+type JobAdStatus = 'PENDING' | 'PUBLISHED' | 'REJECTED'
+
 interface Ad {
-  id: string;
-  title: string;
-  description: string;
-  category: string;
-  createdAt: string;
-  images?: string[];
+  id: string
+  title: string
+  description: string
+  category: string
+  createdAt: string
+  images?: string[]
+  status?: JobAdStatus   // برای فیلتر کردن استفاده می‌کنیم
 }
 
 export default function HomePage() {
@@ -29,14 +33,30 @@ export default function HomePage() {
 
   useEffect(() => {
     async function fetchAds() {
-      const res = await fetch('/api/ads')
-      const data = await res.json()
-      setAds(data)
+      try {
+        const res = await fetch('/api/ads')
+        if (!res.ok) {
+          console.error('خطا در دریافت آگهی‌ها:', res.status)
+          return
+        }
+
+        const data = await res.json()
+
+        // ✅ فقط آگهی‌های منتشر شده
+        const onlyPublished = (data as Ad[]).filter((ad) => {
+          // آگهی‌های قدیمی که status ندارند را منتشر شده فرض می‌کنیم
+          if (!ad.status) return true
+          return ad.status === 'PUBLISHED'
+        })
+
+        setAds(onlyPublished)
+      } catch (err) {
+        console.error('❌ خطا در fetch آگهی‌ها:', err)
+      }
     }
 
     fetchAds()
 
-    // Animation for entry
     const timer = setTimeout(() => {
       setIsHeroVisible(true)
     }, 300)
@@ -45,14 +65,14 @@ export default function HomePage() {
   }, [])
 
   const categories = [
-    { title: "استخدام", icon: <FaBriefcase size={36} className="mx-auto text-blue-600" />, link: "/ads?category=استخدام" },
-    { title: "ماشین‌آلات", icon: <FaTools size={36} className="mx-auto text-green-600" />, link: "/ads?category=ماشین‌آلات" },
-    { title: "نیازمندی‌ها", icon: <FaBoxOpen size={36} className="mx-auto text-orange-600" />, link: "/ads?category=نیازمندی‌ها" },
-    { title: "طراحان", icon: <FaPaintBrush size={36} className="mx-auto text-pink-600" />, link: "/freelancers?type=designer" },
-    { title: "چاپخانه‌ها", icon: <FaIndustry size={36} className="mx-auto text-gray-700" />, link: "/printers" },
-    { title: "تأمین‌کنندگان", icon: <FaTruckMoving size={36} className="mx-auto text-yellow-600" />, link: "/suppliers" },
-    { title: "پروژه‌ها", icon: <FaFolderOpen size={36} className="mx-auto text-purple-600" />, link: "/projects" },
-    { title: "سایر", icon: <FaPlus size={36} className="mx-auto text-gray-500" />, link: "/categories" },
+    { title: 'استخدام', icon: <FaBriefcase size={36} className="mx-auto text-blue-600" />, link: '/ads?category=استخدام' },
+    { title: 'ماشین‌آلات', icon: <FaTools size={36} className="mx-auto text-green-600" />, link: '/ads?category=ماشین‌آلات' },
+    { title: 'نیازمندی‌ها', icon: <FaBoxOpen size={36} className="mx-auto text-orange-600" />, link: '/ads?category=نیازمندی‌ها' },
+    { title: 'طراحان', icon: <FaPaintBrush size={36} className="mx-auto text-pink-600" />, link: '/freelancers?type=designer' },
+    { title: 'چاپخانه‌ها', icon: <FaIndustry size={36} className="mx-auto text-gray-700" />, link: '/printers' },
+    { title: 'تأمین‌کنندگان', icon: <FaTruckMoving size={36} className="mx-auto text-yellow-600" />, link: '/suppliers' },
+    { title: 'پروژه‌ها', icon: <FaFolderOpen size={36} className="mx-auto text-purple-600" />, link: '/projects' },
+    { title: 'سایر', icon: <FaPlus size={36} className="mx-auto text-gray-500" />, link: '/categories' },
   ]
 
   return (
@@ -60,8 +80,6 @@ export default function HomePage() {
       <main className="min-h-screen bg-white text-gray-900">
         <section className="w-full bg-gray-50 border-b border-gray-200">
           <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-20 text-center">
-
-            {/* تیتر اصلی با سایه مشکی لطیف */}
             <h1
               className={`
                 echap-hero-text
@@ -98,18 +116,28 @@ export default function HomePage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="bg-gray-50 rounded-xl p-6 shadow hover:shadow-md transition">
               <h2 className="text-xl font-semibold mb-2">ثبت آگهی و استخدام</h2>
-              <p className="text-gray-600 mb-4">نیازمندی‌های صنعت چاپ را ببینید یا آگهی خود را ثبت کنید</p>
-              <Link href="/ads" className="text-blue-600 hover:underline">مشاهده آگهی‌ها</Link>
+              <p className="text-gray-600 mb-4">
+                نیازمندی‌های صنعت چاپ را ببینید یا آگهی خود را ثبت کنید
+              </p>
+              <Link href="/ads" className="text-blue-600 hover:underline">
+                مشاهده آگهی‌ها
+              </Link>
             </div>
             <div className="bg-gray-50 rounded-xl p-6 shadow hover:shadow-md transition">
               <h2 className="text-xl font-semibold mb-2">خدمات چاپ و طراحی</h2>
               <p className="text-gray-600 mb-4">با بهترین طراحان و چاپخانه‌ها در تماس باشید</p>
-              <Link href="/services" className="text-blue-600 hover:underline">دیدن خدمات</Link>
+              <Link href="/services" className="text-blue-600 hover:underline">
+                دیدن خدمات
+              </Link>
             </div>
             <div className="bg-gray-50 rounded-xl p-6 shadow hover:shadow-md transition">
               <h2 className="text-xl font-semibold mb-2">تأمین‌کنندگان تجهیزات</h2>
-              <p className="text-gray-600 mb-4">مواد مصرفی و دستگاه‌ها را از تأمین‌کنندگان معتبر تهیه کنید</p>
-              <Link href="/suppliers" className="text-blue-600 hover:underline">ورود به فروشگاه</Link>
+              <p className="text-gray-600 mb-4">
+                مواد مصرفی و دستگاه‌ها را از تأمین‌کنندگان معتبر تهیه کنید
+              </p>
+              <Link href="/suppliers" className="text-blue-600 hover:underline">
+                ورود به فروشگاه
+              </Link>
             </div>
           </div>
         </section>
@@ -133,7 +161,8 @@ export default function HomePage() {
                     createdAt: ad.createdAt,
                     images: ad.images || [],
                     link: `/ads/${ad.id}`,
-                    postedAt: new Date(ad.createdAt).toLocaleDateString("fa-IR")
+                    postedAt: new Date(ad.createdAt).toLocaleDateString('fa-IR'),
+                    // ❌ دیگر status نمی‌فرستیم
                   }}
                 />
               ))
@@ -164,11 +193,10 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* فقط یک سایه مشکی خیلی خیلی لطیف */}
       <style jsx>{`
         .echap-hero-text {
           color: #000;
-          text-shadow: 
+          text-shadow:
             0 1px 2px rgba(0, 0, 0, 0.15),
             0 2px 4px rgba(0, 0, 0, 0.08);
         }

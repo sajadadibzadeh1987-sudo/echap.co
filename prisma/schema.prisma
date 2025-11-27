@@ -30,17 +30,20 @@ model User {
 }
 
 model JobAd {
-  id          String   @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   description String
   category    String
   phone       String
-  createdAt   DateTime @default(now())
-  isFeatured  Boolean  @default(false)
+  createdAt   DateTime      @default(now())
+  isFeatured  Boolean       @default(false)
   images      String[]
 
+  // 👇 فیلد وضعیت آگهی
+  status      JobAdStatus   @default(PUBLISHED)
+
   userId      String?
-  user        User?    @relation(fields: [userId], references: [id])
+  user        User?         @relation(fields: [userId], references: [id])
 }
 
 model BusinessProfile {
@@ -91,4 +94,11 @@ model OTP {
   phone     String   @unique
   code      String
   createdAt DateTime @default(now())
+}
+
+// 👇 Enum وضعیت آگهی‌ها
+enum JobAdStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
 }
