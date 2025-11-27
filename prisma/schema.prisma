@@ -8,21 +8,21 @@ datasource db {
 }
 
 model User {
-  id               String            @id @default(cuid())
-  phone            String            @unique
-  password         String?
-  role             String            @default("user")
-  hasSelectedRole  Boolean           @default(false)
-  firstName        String?
-  lastName         String?
-  email            String?           @unique
-  slug             String?           @unique
-  image            String?
-  bio              String?
-  otp              String?
-  otpExpiry        DateTime?
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
+  id              String    @id @default(cuid())
+  phone           String    @unique
+  password        String?
+  role            String    @default("user")
+  hasSelectedRole Boolean   @default(false)
+  firstName       String?
+  lastName        String?
+  email           String?   @unique
+  slug            String?   @unique
+  image           String?
+  bio             String?
+  otp             String?
+  otpExpiry       DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   jobAds           JobAd[]
   businessProfile  BusinessProfile?
@@ -30,63 +30,63 @@ model User {
 }
 
 model JobAd {
-  id          String        @id @default(cuid())
+  id          String   @id @default(cuid())
   title       String
   description String
   category    String
   phone       String
-  createdAt   DateTime      @default(now())
-  isFeatured  Boolean       @default(false)
+  createdAt   DateTime @default(now())
+  isFeatured  Boolean  @default(false)
   images      String[]
 
   // 👇 فیلد وضعیت آگهی
-  status      JobAdStatus   @default(PUBLISHED)
+  status JobAdStatus @default(PUBLISHED)
 
-  userId      String?
-  user        User?         @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
 }
 
 model BusinessProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id])
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
-  slug           String   @unique
-  displayName    String
-  description    String?
-  services       String[]
-  phone          String?
-  address        String?
-  locationLat    Float?
-  locationLng    Float?
-  logoUrl        String?
-  galleryImages  String[]
-  openingHours   String?
-  website        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  slug          String   @unique
+  displayName   String
+  description   String?
+  services      String[]
+  phone         String?
+  address       String?
+  locationLat   Float?
+  locationLng   Float?
+  logoUrl       String?
+  galleryImages String[]
+  openingHours  String?
+  website       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model PrintShopProfile {
-  id             String   @id @default(cuid())
-  userId         String   @unique
-  user           User     @relation(fields: [userId], references: [id])
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
 
-  name           String
-  slug           String   @unique
-  description    String?
-  phone          String?
-  address        String?
-  locationLat    Float?
-  locationLng    Float?
-  logoUrl        String?
-  galleryImages  String[]
-  clients        String[]
-  capabilities   String[] @default([])
-  openingHours   String?
-  website        String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  name          String
+  slug          String   @unique
+  description   String?
+  phone         String?
+  address       String?
+  locationLat   Float?
+  locationLng   Float?
+  logoUrl       String?
+  galleryImages String[]
+  clients       String[]
+  capabilities  String[] @default([])
+  openingHours  String?
+  website       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model OTP {
