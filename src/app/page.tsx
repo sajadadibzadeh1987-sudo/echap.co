@@ -1,7 +1,7 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import Link from 'next/link'
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import {
   FaBriefcase,
   FaTools,
@@ -11,73 +11,116 @@ import {
   FaTruckMoving,
   FaFolderOpen,
   FaPlus,
-} from 'react-icons/fa'
-import AdCard from '@/components/AdCard'
+} from 'react-icons/fa';
+import AdCard from '@/components/AdCard'; // ✅ مهم: مطابق فایل واقعی تو
 
 // وضعیت آگهی
-type JobAdStatus = 'PENDING' | 'PUBLISHED' | 'REJECTED'
+type JobAdStatus = 'PENDING' | 'PUBLISHED' | 'REJECTED';
 
-interface Ad {
-  id: string
-  title: string
-  description: string
-  category: string
-  createdAt: string
-  images?: string[]
-  status?: JobAdStatus   // برای فیلتر کردن استفاده می‌کنیم
+interface ApiAd {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  createdAt: string;
+  images?: string[];
+  status?: JobAdStatus;
+}
+
+interface HomeAd {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  createdAt: string;
+  images?: string[];
+  status?: JobAdStatus;
 }
 
 export default function HomePage() {
-  const [ads, setAds] = useState<Ad[]>([])
-  const [isHeroVisible, setIsHeroVisible] = useState(false)
+  const [ads, setAds] = useState<HomeAd[]>([]);
+  const [isHeroVisible, setIsHeroVisible] = useState(false);
 
   useEffect(() => {
     async function fetchAds() {
       try {
-        const res = await fetch('/api/ads')
+        const res = await fetch('/api/ads');
         if (!res.ok) {
-          console.error('خطا در دریافت آگهی‌ها:', res.status)
-          return
+          console.error('خطا در دریافت آگهی‌ها:', res.status);
+          return;
         }
 
-        const data = await res.json()
+        const data = (await res.json()) as ApiAd[];
 
         // ✅ فقط آگهی‌های منتشر شده
-        const onlyPublished = (data as Ad[]).filter((ad) => {
+        const onlyPublished: HomeAd[] = data.filter((ad) => {
           // آگهی‌های قدیمی که status ندارند را منتشر شده فرض می‌کنیم
-          if (!ad.status) return true
-          return ad.status === 'PUBLISHED'
-        })
+          if (!ad.status) return true;
+          return ad.status === 'PUBLISHED';
+        });
 
-        setAds(onlyPublished)
+        setAds(onlyPublished);
       } catch (err) {
-        console.error('❌ خطا در fetch آگهی‌ها:', err)
+        console.error('❌ خطا در fetch آگهی‌ها:', err);
       }
     }
 
-    fetchAds()
+    fetchAds();
 
     const timer = setTimeout(() => {
-      setIsHeroVisible(true)
-    }, 300)
+      setIsHeroVisible(true);
+    }, 300);
 
-    return () => clearTimeout(timer)
-  }, [])
+    return () => clearTimeout(timer);
+  }, []);
 
   const categories = [
-    { title: 'استخدام', icon: <FaBriefcase size={36} className="mx-auto text-blue-600" />, link: '/ads?category=استخدام' },
-    { title: 'ماشین‌آلات', icon: <FaTools size={36} className="mx-auto text-green-600" />, link: '/ads?category=ماشین‌آلات' },
-    { title: 'نیازمندی‌ها', icon: <FaBoxOpen size={36} className="mx-auto text-orange-600" />, link: '/ads?category=نیازمندی‌ها' },
-    { title: 'طراحان', icon: <FaPaintBrush size={36} className="mx-auto text-pink-600" />, link: '/freelancers?type=designer' },
-    { title: 'چاپخانه‌ها', icon: <FaIndustry size={36} className="mx-auto text-gray-700" />, link: '/printers' },
-    { title: 'تأمین‌کنندگان', icon: <FaTruckMoving size={36} className="mx-auto text-yellow-600" />, link: '/suppliers' },
-    { title: 'پروژه‌ها', icon: <FaFolderOpen size={36} className="mx-auto text-purple-600" />, link: '/projects' },
-    { title: 'سایر', icon: <FaPlus size={36} className="mx-auto text-gray-500" />, link: '/categories' },
-  ]
+    {
+      title: 'استخدام',
+      icon: <FaBriefcase size={36} className="mx-auto text-blue-600" />,
+      link: '/ads?category=استخدام',
+    },
+    {
+      title: 'ماشین‌آلات',
+      icon: <FaTools size={36} className="mx-auto text-green-600" />,
+      link: '/ads?category=ماشین‌آلات',
+    },
+    {
+      title: 'نیازمندی‌ها',
+      icon: <FaBoxOpen size={36} className="mx-auto text-orange-600" />,
+      link: '/ads?category=نیازمندی‌ها',
+    },
+    {
+      title: 'طراحان',
+      icon: <FaPaintBrush size={36} className="mx-auto text-pink-600" />,
+      link: '/freelancers?type=designer',
+    },
+    {
+      title: 'چاپخانه‌ها',
+      icon: <FaIndustry size={36} className="mx-auto text-gray-700" />,
+      link: '/printers',
+    },
+    {
+      title: 'تأمین‌کنندگان',
+      icon: <FaTruckMoving size={36} className="mx-auto text-yellow-600" />,
+      link: '/suppliers',
+    },
+    {
+      title: 'پروژه‌ها',
+      icon: <FaFolderOpen size={36} className="mx-auto text-purple-600" />,
+      link: '/projects',
+    },
+    {
+      title: 'سایر',
+      icon: <FaPlus size={36} className="mx-auto text-gray-500" />,
+      link: '/categories',
+    },
+  ];
 
   return (
     <>
       <main className="min-h-screen bg-white text-gray-900">
+        {/* Hero Section */}
         <section className="w-full bg-gray-50 border-b border-gray-200">
           <div className="max-w-screen-xl mx-auto px-4 md:px-8 py-20 text-center">
             <h1
@@ -112,6 +155,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* سه کارت مزیت اصلی */}
         <section className="max-w-screen-xl mx-auto px-4 md:px-8 py-16">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
             <div className="bg-gray-50 rounded-xl p-6 shadow hover:shadow-md transition">
@@ -142,6 +186,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* آگهی‌های جدید */}
         <section className="max-w-screen-xl mx-auto px-4 md:px-8 py-16">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold mb-2">آگهی‌های جدید</h2>
@@ -150,9 +195,9 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
             {ads.length > 0 ? (
-              ads.map((ad, i) => (
+              ads.map((ad) => (
                 <AdCard
-                  key={i}
+                  key={ad.id}
                   ad={{
                     id: ad.id,
                     title: ad.title,
@@ -160,9 +205,9 @@ export default function HomePage() {
                     category: ad.category,
                     createdAt: ad.createdAt,
                     images: ad.images || [],
-                    link: `/ads/${ad.id}`,
+                    link: `/ads/${ad.id}`, // ✅ پیوند به صفحه تک‌آگهی
                     postedAt: new Date(ad.createdAt).toLocaleDateString('fa-IR'),
-                    // ❌ دیگر status نمی‌فرستیم
+                    status: ad.status ?? 'PUBLISHED',
                   }}
                 />
               ))
@@ -172,6 +217,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* دسته‌بندی‌ها */}
         <section className="max-w-screen-xl mx-auto px-4 md:px-8 py-16">
           <div className="text-center mb-10">
             <h2 className="text-2xl md:text-3xl font-bold mb-2">دسته‌بندی‌ها</h2>
@@ -202,5 +248,5 @@ export default function HomePage() {
         }
       `}</style>
     </>
-  )
+  );
 }

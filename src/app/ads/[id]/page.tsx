@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
 import { buildPublicImageSrc } from '@/lib/imageFiles';
-import { showError } from '@/lib/toast';
+import { showError, showSuccess } from '@/lib/toast';
 
 interface JobAd {
   id: string;
@@ -30,7 +30,9 @@ export default function AdDetailsPage() {
     async function fetchAd() {
       try {
         setIsLoading(true);
-        const res = await fetch(`/api/jobads/${id}`, {
+
+        // ✅ این روت با فایل API که داریم هماهنگه
+        const res = await fetch(`/api/ads/${id}`, {
           cache: 'no-store',
         });
 
@@ -158,7 +160,8 @@ export default function AdDetailsPage() {
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold mb-1">{ad.title}</h1>
                   <p className="text-xs text-gray-500">
-                    دسته‌بندی: <span className="font-medium text-gray-700">{ad.category}</span>
+                    دسته‌بندی:{' '}
+                    <span className="font-medium text-gray-700">{ad.category}</span>
                   </p>
                 </div>
 
@@ -183,10 +186,9 @@ export default function AdDetailsPage() {
                   <span className="text-gray-500">تاریخ ثبت</span>
                   <span>{createdAtFa}</span>
                 </div>
-                {/* اگر بعداً فیلد شهر/محله اضافه شد، اینجا نشون می‌دیم */}
               </div>
 
-              {/* دکمه‌های تماس / نمایش شماره – فعلاً فقط UI */}
+              {/* دکمه‌های تماس / نمایش شماره */}
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   type="button"
@@ -194,8 +196,8 @@ export default function AdDetailsPage() {
                   onClick={() =>
                     navigator.clipboard
                       .writeText(ad.phone)
-                      .then(() => showError(`شماره ${ad.phone} کپی شد`))
-                      .catch(() => {})
+                      .then(() => showSuccess(`شماره ${ad.phone} کپی شد`))
+                      .catch(() => showError('خطا در کپی شماره'))
                   }
                 >
                   اطلاعات تماس
@@ -209,7 +211,7 @@ export default function AdDetailsPage() {
               </div>
             </section>
 
-            {/* باکس کوچک توضیحات تکمیلی / نکته مهم */}
+            {/* باکس هشدار / نکته مهم */}
             <section className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 text-xs text-yellow-900 leading-6">
               برخی هشدارها یا نکات اعتمادسازی و قوانین ایچاپ بعداً اینجا نمایش داده می‌شود؛
               مشابه «خطر‌های قبل از معامله» در دیوار.

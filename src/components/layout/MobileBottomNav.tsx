@@ -37,7 +37,7 @@ export default function MobileBottomNav() {
     >
       <div className="max-w-md mx-auto px-2 py-1">
         <div className="flex justify-between gap-1">
-          {/* چپ‌ترین: نیازمندی‌ها */}
+          {/* چپ‌ترین: نیازمندی‌ها → صفحه آگهی‌ها */}
           <Link
             href="/ads"
             className={`${baseStyle} ${normalSize} ${
@@ -52,11 +52,11 @@ export default function MobileBottomNav() {
             </span>
           </Link>
 
-          {/* آگهی‌ها */}
+          {/* آگهی‌ها → همون صفحه لیست همه آگهی‌ها */}
           <Link
-            href="/dashboard/jobads/my"
+            href="/ads"
             className={`${baseStyle} ${normalSize} ${
-              isActive("/dashboard/jobads")
+              isActive("/ads")
                 ? "bg-gray-900 text-white"
                 : "text-gray-600 hover:bg-gray-100"
             }`}
@@ -115,7 +115,7 @@ export default function MobileBottomNav() {
           ) : (
             <button
               type="button"
-              onClick={() => openModal("auth")} // 👈 این مهم‌ترین خط اتصال است
+              onClick={() => openModal("auth")}
               className={`${baseStyle} ${normalSize} text-gray-600 hover:bg-gray-100`}
             >
               <User2 className="w-5 h-5 mb-0.5" />
