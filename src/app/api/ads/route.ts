@@ -1,31 +1,23 @@
-// src/app/api/ads/[id]/route.ts
-import { NextRequest, NextResponse } from "next/server";
+// src/app/api/ads/route.ts
+import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+export async function GET() {
   try {
-    const { id } = params;
-
-    const ad = await prisma.jobAd.findUnique({
-      where: { id },
+    const ads = await prisma.jobAd.findMany({
+      where: {
+        status: "PUBLISHED",
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
-    // اگر پیدا نشد یا منتشر نشده
-    if (!ad || ad.status !== "PUBLISHED") {
-      return NextResponse.json(
-        { error: "آگهی پیدا نشد" },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json(ad, { status: 200 });
+    return NextResponse.json(ads, { status: 200 });
   } catch (error) {
-    console.error("❌ GET /api/ads/[id] error:", error);
+    console.error("❌ GET /api/ads error:", error);
     return NextResponse.json(
-      { error: "خطای سرور در بارگذاری آگهی" },
+      { error: "خطای سرور در دریافت آگهی‌ها" },
       { status: 500 }
     );
   }
