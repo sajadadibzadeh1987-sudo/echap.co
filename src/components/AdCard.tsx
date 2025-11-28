@@ -25,13 +25,15 @@ interface AdCardProps {
   onDelete?: (id: string) => void;
 }
 
-// 🧠 از آدرس نرمال‌شده، آدرس thumbnail می‌سازیم
+// 🧠 از آدرس نرمال‌شده، آدرس نمایشی تصویر را می‌سازیم
+// ⚠️ فعلاً از خود تصویر اصلی استفاده می‌کنیم، نه /thumbs/
+// تا وقتی سیستم ساخت thumbnail کاملاً روی سرور فعال شود.
 function buildThumbSrc(raw: string): string {
   if (!raw || raw === '/placeholder.png') return '/placeholder.png';
 
   const publicSrc = buildPublicImageSrc(raw);
 
-  // اگر لینک خارجی است همون رو برگردون
+  // اگر لینک خارجی است همون را برگردان
   if (publicSrc.startsWith('http://') || publicSrc.startsWith('https://')) {
     return publicSrc;
   }
@@ -41,11 +43,9 @@ function buildThumbSrc(raw: string): string {
     return publicSrc;
   }
 
-  // اگر /uploads/ است → /uploads/thumbs/
-  if (publicSrc.startsWith('/uploads/')) {
-    return publicSrc.replace('/uploads/', '/uploads/thumbs/');
-  }
-
+  // 👇 فعلاً: همان تصویر اصلی را استفاده کن
+  // (در آینده، وقتی thumbnailها واقعاً روی سرور تولید شدند،
+  // می‌توانیم اینجا را به /uploads/thumbs/ برگردانیم.)
   return publicSrc;
 }
 
@@ -98,7 +98,7 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
 
       {/* کل کارت لینک به صفحه تک‌آگهی */}
       <Link href={ad.link} className="flex flex-col md:flex-row gap-3 p-3 md:p-4">
-        {/* تصویر thumbnail */}
+        {/* تصویر thumbnail / اصلی */}
         <div
           className="
             relative
