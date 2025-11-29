@@ -1,3 +1,4 @@
+// app/api/jobads/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import path from "path";
@@ -8,7 +9,7 @@ import { authOptions } from "@/lib/auth";
 import { deleteImageSafe } from "@/lib/imageFilesServer";
 
 /* ------------------------------------------------------
-   🟩 GET — دریافت یک آگهی بر اساس ID
+   🟩 GET — دریافت یک آگهی بر اساس ID (برای داشبورد/ویرایش)
 --------------------------------------------------------*/
 export async function GET(
   req: NextRequest,
@@ -43,7 +44,7 @@ export async function GET(
 }
 
 /* ------------------------------------------------------
-   🟩 PATCH — ویرایش تصاویر آگهی + ساخت thumbnail (پردازش موازی)
+   🟧 PATCH — ویرایش تصاویر آگهی + ساخت thumbnail (پردازش موازی)
 --------------------------------------------------------*/
 export async function PATCH(
   req: NextRequest,
@@ -151,7 +152,7 @@ export async function PATCH(
 }
 
 /* ------------------------------------------------------
-   🟥 DELETE — بدون تغییر، همون نسخه با deleteImageSafe
+   🟥 DELETE — حذف آگهی + حذف فیزیکی تصاویر
 --------------------------------------------------------*/
 export async function DELETE(
   req: NextRequest,

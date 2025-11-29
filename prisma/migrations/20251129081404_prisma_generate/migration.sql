@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "JobAd" ALTER COLUMN "status" SET DEFAULT 'PENDING';

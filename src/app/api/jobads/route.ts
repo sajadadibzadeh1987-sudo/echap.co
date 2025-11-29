@@ -1,4 +1,4 @@
-// src/app/api/jobads/route.ts
+// app/api/jobads/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -40,17 +40,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // گرفتن فایل‌ها
     const files = formData
       .getAll("images")
       .filter((f): f is File => f instanceof File);
 
     const limitedFiles = files.slice(0, MAX_FILES);
 
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDir, { recursive: true });
-
-    const imageUrls: string[] = [];
-
+    // اعتبارسنجی سریع همه فایل‌ها
     for (const file of limitedFiles) {
       if (!ALLOWED_TYPES.includes(file.type)) {
         return NextResponse.json(
@@ -65,19 +62,67 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
-
-      const buffer = Buffer.from(await file.arrayBuffer());
-      const ext = path.extname(file.name) || ".jpg";
-      const filename = `${uuidv4()}${ext}`;
-      const filepath = path.join(uploadDir, filename);
-
-      await writeFile(filepath, buffer);
-
-      imageUrls.push(`/uploads/${filename}`);
     }
+
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    const thumbDir = path.join(uploadDir, "thumbs");
+
+    await mkdir(uploadDir, { recursive: true });
+    await mkdir(thumbDir, { recursive: true });
+
+    const sharpModule = await import("sharp");
+    const sharp = sharpModule.default;
+
+    // اگر اصلاً عکسی نیست → آگهی بدون تصویر ولی منتشر شده
+    if (limitedFiles.length === 0) {
+      const jobAd = await prisma.jobAd.create({
+        data: {
+          title,
+          description,
+          category,
+          phone,
+          userId: session.user.id,
+          images: [],
+          status: "PUBLISHED",
+        },
+      });
+
+      return NextResponse.json(jobAd, { status: 201 });
+    }
+
+    // 🧠 ذخیره و ساخت thumbnail برای همه تصاویر به صورت همزمان
+    const imageUrls: string[] = await Promise.all(
+      limitedFiles.map(async (file) => {
+        const buffer = Buffer.from(await file.arrayBuffer());
+        const ext = path.extname(file.name) || ".jpg";
+        const filename = `${uuidv4()}${ext}`;
+
+        const filepath = path.join(uploadDir, filename);
+        const thumbPath = path.join(thumbDir, filename);
+
+        // نسخه اصلی
+        await writeFile(filepath, buffer);
+
+        // thumbnail
+        try {
+          await sharp(buffer)
+            .resize(400, 400, {
+              fit: "inside",
+              withoutEnlargement: true,
+            })
+            .toFile(thumbPath);
+        } catch (err) {
+          console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
+        }
+
+        // آدرس قابل دسترس در فرانت
+        return `/uploads/${filename}`;
+      })
+    );
 
     let finalImageUrls = [...imageUrls];
 
+    // تنظیم تصویر اصلی بر اساس ایندکس
     const mainImageIndex = mainImageIndexRaw
       ? parseInt(mainImageIndexRaw, 10)
       : null;
@@ -95,15 +140,25 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    const jobAd = await prisma.jobAd.create({
+    // ۱) آگهی ابتدا در حالت "در صف انتشار" ساخته می‌شود
+    const baseAd = await prisma.jobAd.create({
       data: {
         title,
         description,
         category,
         phone,
         userId: session.user.id,
+        images: [],
+        status: "PENDING",
+      },
+    });
+
+    // ۲) بعد از اطمینان از ذخیره‌ی تصاویر + thumbnail ها، آگهی منتشر می‌شود
+    const jobAd = await prisma.jobAd.update({
+      where: { id: baseAd.id },
+      data: {
         images: finalImageUrls,
-        // 👈 فعلاً status اینجا فرستاده نمی‌شود
+        status: "PUBLISHED",
       },
     });
 

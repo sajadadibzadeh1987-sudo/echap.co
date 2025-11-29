@@ -4,7 +4,6 @@ import prisma from "@/lib/prisma";
 import { normalizeToFilename } from "@/lib/imageFiles";
 import { deleteImageSafe } from "@/lib/imageFilesServer";
 
-
 export async function PATCH(
   req: NextRequest,
   { params }: { params: { id: string } }
@@ -12,11 +11,9 @@ export async function PATCH(
   try {
     const jobAdId = params.id;
 
-    // Body باید شکلی مثل { images: string[] } داشته باشد
     const body = await req.json();
     const incomingImages = (body.images ?? []) as string[];
 
-    // آگهی فعلی را از دیتابیس بگیریم
     const jobAd = await prisma.jobAd.findUnique({
       where: { id: jobAdId },
       select: { images: true },
@@ -31,7 +28,6 @@ export async function PATCH(
 
     const oldImages: string[] = jobAd.images ?? [];
 
-    // نرمال‌سازی رشته‌ها برای مقایسه
     const oldNorm: string[] = oldImages.map((img: string) =>
       normalizeToFilename(img)
     );
@@ -44,12 +40,11 @@ export async function PATCH(
       (oldImg: string) => !newNorm.includes(oldImg)
     );
 
-    // حذف فیزیکی فایل‌ها از VPS
     await Promise.all(
       toDelete.map((img: string) => deleteImageSafe(img))
     );
 
-    // ذخیره‌ی لیست جدید در DB (به‌صورت نرمال‌شده)
+    // در DB نسخه نرمال‌شده ذخیره می‌کنیم (سازگار با بقیه utilها)
     const updated = await prisma.jobAd.update({
       where: { id: jobAdId },
       data: {
