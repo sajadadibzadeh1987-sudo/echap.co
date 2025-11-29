@@ -1,11 +1,13 @@
 ├── app/
 │   ├── ads/
+│   │   ├── page.tsx
 │   │   ├── [id]/
 │   │   │   ├── page.tsx
 │   ├── api/
 │   │   ├── ads/
 │   │   │   ├── route.ts
 │   │   │   ├── [id]/
+│   │   │   │   ├── route.ts
 │   │   ├── auth/
 │   │   │   ├── error/
 │   │   │   │   ├── page.tsx
@@ -75,6 +77,7 @@
 │   ├── providers.tsx
 ├── components/
 │   ├── AdCard.tsx
+│   ├── AdPopup.tsx
 │   ├── auth/
 │   │   ├── AuthModal.tsx
 │   │   ├── ChooseRoleModal.tsx
@@ -135,6 +138,7 @@
 │   ├── api.ts
 │   ├── auth.ts
 │   ├── imageFiles.ts
+│   ├── imageFilesServer.ts
 │   ├── prisma.ts
 │   ├── sendOtp.ts
 │   ├── toast.ts

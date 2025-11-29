@@ -19,109 +19,107 @@ export default function MobileBottomNav() {
     return pathname.startsWith(href);
   };
 
-  const baseStyle =
-    "flex flex-col items-center justify-center transition transform active:scale-95";
-  const normalSize = "flex-1 py-1.5 rounded-xl";
-  const centerSize = "flex-[1.2] py-2 px-3 rounded-2xl";
+  const items = [
+    { labelFa: "نیازمندی‌ها", href: "/as", icon: ListChecks, key: "needs" },
+    { labelFa: "آگهی‌ها", href: "/ads", icon: Megaphone, key: "ads" },
+    { labelFa: "خانه", href: "/", icon: Home, key: "home" },
+    {
+      labelFa: "درج آگهی",
+      href: "/dashboard/jobads/create",
+      icon: PlusCircle,
+      key: "create",
+    },
+  ] as const;
 
   return (
     <nav
       className="
         fixed bottom-0 inset-x-0 z-40
         md:hidden
-        bg-white/95 backdrop-blur
-        border-t border-gray-200
+        bg-black/70          /* شیشه دودی با اوپَسیتی */
+        backdrop-blur-md     /* بلور پس‌زمینه */
       "
-      // چیدمان آیکن‌ها LTR، ولی متن‌ها RTL
+      // آیکون‌ها LTR، تکست‌ها RTL
       style={{ direction: "ltr" }}
     >
-      <div className="max-w-md mx-auto px-2 py-1">
-        <div className="flex justify-between gap-1">
-          {/* چپ‌ترین: نیازمندی‌ها → صفحه آگهی‌ها */}
-          <Link
-            href="/ads"
-            className={`${baseStyle} ${normalSize} ${
-              isActive("/ads")
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <ListChecks className="w-5 h-5 mb-0.5" />
-            <span className="text-[11px] leading-none" dir="rtl">
-              نیازمندی‌ها
-            </span>
-          </Link>
+      <div className="max-w-md mx-auto px-4 py-2">
+        <div className="flex items-center justify-between gap-3">
+          {/* چهار آیتم اصلی */}
+          {items.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
 
-          {/* آگهی‌ها → همون صفحه لیست همه آگهی‌ها */}
-          <Link
-            href="/ads"
-            className={`${baseStyle} ${normalSize} ${
-              isActive("/ads")
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Megaphone className="w-5 h-5 mb-0.5" />
-            <span className="text-[11px] leading-none" dir="rtl">
-              آگهی‌ها
-            </span>
-          </Link>
+            return (
+              <Link
+                key={item.key}
+                href={item.href}
+                className="flex-1 flex justify-center"
+              >
+                <div
+                  className={[
+                    "flex items-center justify-center gap-1",
+                    "transition-all duration-200 ease-out active:scale-95",
+                    active
+                      ? "px-3 py-2 rounded-full bg-[#111827] text-white shadow-[0_0_14px_rgba(255,255,255,0.45)]"
+                      : "w-12 h-12 rounded-full text-gray-400",
+                  ].join(" ")}
+                >
+                  <Icon className="w-[22px] h-[22px]" strokeWidth={2} />
+                  {active && (
+                    <span
+                      className="text-[12px] font-medium leading-none"
+                      dir="rtl"
+                    >
+                      {item.labelFa}
+                    </span>
+                  )}
+                </div>
+              </Link>
+            );
+          })}
 
-          {/* وسط: خانه (بزرگ‌تر) */}
-          <Link
-            href="/"
-            className={`${baseStyle} ${centerSize} ${
-              isActive("/")
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Home className="w-6 h-6 mb-0.5" />
-            <span className="text-[11px] leading-none" dir="rtl">
-              خانه
-            </span>
-          </Link>
-
-          {/* درج آگهی */}
-          <Link
-            href="/dashboard/jobads/create"
-            className={`${baseStyle} ${normalSize} ${
-              isActive("/dashboard/jobads/create")
-                ? "bg-gray-900 text-white"
-                : "text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <PlusCircle className="w-5 h-5 mb-0.5" />
-            <span className="text-[11px] leading-none" dir="rtl">
-              درج آگهی
-            </span>
-          </Link>
-
-          {/* راست‌ترین: پروفایل یا ورود */}
+          {/* پروفایل / ورود (آیتم پنجم سمت راست) */}
           {isLoggedIn ? (
             <Link
               href="/dashboard"
-              className={`${baseStyle} ${normalSize} ${
-                isActive("/dashboard")
-                  ? "bg-gray-900 text-white"
-                  : "text-gray-600 hover:bg-gray-100"
-              }`}
+              className="flex-1 flex justify-center"
             >
-              <User2 className="w-5 h-5 mb-0.5" />
-              <span className="text-[11px] leading-none" dir="rtl">
-                پروفایل
-              </span>
+              <div
+                className={[
+                  "flex items-center justify-center gap-1",
+                  "transition-all duration-200 ease-out active:scale-95",
+                  isActive("/dashboard")
+                    ? "px-3 py-2 rounded-full bg-[#111827] text-white shadow-[0_0_14px_rgba(255,255,255,0.45)]"
+                    : "w-12 h-12 rounded-full text-gray-400",
+                ].join(" ")}
+              >
+                <User2 className="w-[22px] h-[22px]" strokeWidth={2} />
+                {isActive("/dashboard") && (
+                  <span
+                    className="text-[12px] font-medium leading-none"
+                    dir="rtl"
+                  >
+                    پروفایل
+                  </span>
+                )}
+              </div>
             </Link>
           ) : (
             <button
               type="button"
               onClick={() => openModal("auth")}
-              className={`${baseStyle} ${normalSize} text-gray-600 hover:bg-gray-100`}
+              className="flex-1 flex justify-center"
             >
-              <User2 className="w-5 h-5 mb-0.5" />
-              <span className="text-[11px] leading-none" dir="rtl">
-                ورود
-              </span>
+              <div
+                className="
+                  w-12 h-12 rounded-full
+                  flex items-center justify-center
+                  text-gray-400
+                  transition-all duration-200 ease-out active:scale-95
+                "
+              >
+                <User2 className="w-[22px] h-[22px]" strokeWidth={2} />
+              </div>
             </button>
           )}
         </div>
