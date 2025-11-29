@@ -3,7 +3,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, User2, PlusCircle, Megaphone, ListChecks } from "lucide-react";
+import {
+  Home,
+  User2,
+  PlusCircle,
+  Megaphone,
+  ListChecks,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import useModalStore from "@/hooks/use-modal-store";
 
@@ -20,31 +26,30 @@ export default function MobileBottomNav() {
   };
 
   const items = [
-    { labelFa: "نیازمندی‌ها", href: "/as", icon: ListChecks, key: "needs" },
-    { labelFa: "آگهی‌ها", href: "/ads", icon: Megaphone, key: "ads" },
-    { labelFa: "خانه", href: "/", icon: Home, key: "home" },
+    { key: "needs", labelFa: "فروشگاه", href: "/as", icon: ListChecks },
+    { key: "ads", labelFa: "آگهی‌ها", href: "/ads", icon: Megaphone },
+    { key: "home", labelFa: "خانه", href: "/", icon: Home },
     {
+      key: "create",
       labelFa: "درج آگهی",
       href: "/dashboard/jobads/create",
       icon: PlusCircle,
-      key: "create",
     },
   ] as const;
 
   return (
     <nav
       className="
-        fixed bottom-0 inset-x-0 z-40
+        fixed bottom-0 inset-x-0 z-50
         md:hidden
-        bg-black/70          /* شیشه دودی با اوپَسیتی */
-        backdrop-blur-md     /* بلور پس‌زمینه */
+        bg-white
+        border-t border-gray-200
       "
-      // آیکون‌ها LTR، تکست‌ها RTL
       style={{ direction: "ltr" }}
     >
-      <div className="max-w-md mx-auto px-4 py-2">
-        <div className="flex items-center justify-between gap-3">
-          {/* چهار آیتم اصلی */}
+      <div className="w-full">
+        <div className="flex items-center justify-between h-16 w-full">
+          {/* ۴ آیتم اصلی */}
           {items.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
@@ -53,72 +58,69 @@ export default function MobileBottomNav() {
               <Link
                 key={item.key}
                 href={item.href}
-                className="flex-1 flex justify-center"
+                className="flex-1 h-full flex items-center justify-center"
               >
-                <div
-                  className={[
-                    "flex items-center justify-center gap-1",
-                    "transition-all duration-200 ease-out active:scale-95",
-                    active
-                      ? "px-3 py-2 rounded-full bg-[#111827] text-white shadow-[0_0_14px_rgba(255,255,255,0.45)]"
-                      : "w-12 h-12 rounded-full text-gray-400",
-                  ].join(" ")}
-                >
-                  <Icon className="w-[22px] h-[22px]" strokeWidth={2} />
-                  {active && (
-                    <span
-                      className="text-[12px] font-medium leading-none"
-                      dir="rtl"
-                    >
-                      {item.labelFa}
-                    </span>
-                  )}
+                <div className="flex flex-col items-center gap-1">
+                  <Icon
+                    className={`w-[22px] h-[22px] ${
+                      active ? "text-red-500" : "text-gray-400"
+                    }`}
+                    strokeWidth={2}
+                  />
+                  <span
+                    className={`text-[11px] leading-none ${
+                      active ? "text-red-500" : "text-gray-500"
+                    }`}
+                    dir="rtl"
+                  >
+                    {item.labelFa}
+                  </span>
                 </div>
               </Link>
             );
           })}
 
-          {/* پروفایل / ورود (آیتم پنجم سمت راست) */}
+          {/* پروفایل یا ورود */}
           {isLoggedIn ? (
             <Link
               href="/dashboard"
-              className="flex-1 flex justify-center"
+              className="flex-1 h-full flex items-center justify-center"
             >
-              <div
-                className={[
-                  "flex items-center justify-center gap-1",
-                  "transition-all duration-200 ease-out active:scale-95",
-                  isActive("/dashboard")
-                    ? "px-3 py-2 rounded-full bg-[#111827] text-white shadow-[0_0_14px_rgba(255,255,255,0.45)]"
-                    : "w-12 h-12 rounded-full text-gray-400",
-                ].join(" ")}
-              >
-                <User2 className="w-[22px] h-[22px]" strokeWidth={2} />
-                {isActive("/dashboard") && (
-                  <span
-                    className="text-[12px] font-medium leading-none"
-                    dir="rtl"
-                  >
-                    پروفایل
-                  </span>
-                )}
+              <div className="flex flex-col items-center gap-1">
+                <User2
+                  className={`w-[22px] h-[22px] ${
+                    isActive("/dashboard")
+                      ? "text-red-500"
+                      : "text-gray-400"
+                  }`}
+                  strokeWidth={2}
+                />
+                <span
+                  className={`text-[11px] leading-none ${
+                    isActive("/dashboard")
+                      ? "text-red-500"
+                      : "text-gray-500"
+                  }`}
+                  dir="rtl"
+                >
+                  پروفایل
+                </span>
               </div>
             </Link>
           ) : (
             <button
               type="button"
               onClick={() => openModal("auth")}
-              className="flex-1 flex justify-center"
+              className="flex-1 h-full flex items-center justify-center"
             >
-              <div
-                className="
-                  w-12 h-12 rounded-full
-                  flex items-center justify-center
-                  text-gray-400
-                  transition-all duration-200 ease-out active:scale-95
-                "
-              >
-                <User2 className="w-[22px] h-[22px]" strokeWidth={2} />
+              <div className="flex flex-col items-center gap-1">
+                <User2
+                  className="w-[22px] h-[22px] text-gray-400"
+                  strokeWidth={2}
+                />
+                <span className="text-[11px] leading-none text-gray-500" dir="rtl">
+                  ورود
+                </span>
               </div>
             </button>
           )}
