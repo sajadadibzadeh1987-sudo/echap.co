@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { buildPublicImageSrc } from '@/lib/imageFiles';
 import { showError, showSuccess } from '@/lib/toast';
 import { AdLocationMap } from '@/components/ad/AdLocationMap';
+import { AD_GROUP_LABELS, type AdGroup } from '@/config/adCategories';
 
 interface JobAd {
   id: string;
@@ -16,6 +17,8 @@ interface JobAd {
   phone: string;
   createdAt: string;
   images: string[];
+  group?: string | null;        // گروه اصلی (JOB, MACHINE, ...)
+  categorySlug?: string | null; // اسلاگ دسته (در صورت نیاز)
 }
 
 export default function AdDetailsPage() {
@@ -81,14 +84,20 @@ export default function AdDetailsPage() {
 
   const createdAtFa = new Date(ad.createdAt).toLocaleDateString('fa-IR');
 
+  // برچسب گروه اصلی برای نمایش در breadcrumb و هدر
+  const groupLabel =
+    ad.group && AD_GROUP_LABELS[ad.group as AdGroup]
+      ? AD_GROUP_LABELS[ad.group as AdGroup]
+      : 'آگهی‌ها';
+
   return (
     <main className="min-h-screen bg-gray-50" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-10">
-        {/* بالای صفحه: مسیر ناوبری */}
+        {/* بالای صفحه: مسیر ناوبری شبیه دیوار */}
         <div className="mb-3 text-xs text-gray-500 flex flex-wrap gap-1">
           <span>ایچاپ</span>
           <span> / </span>
-          <span>آگهی‌ها</span>
+          <span>{groupLabel}</span>
           <span> / </span>
           <span className="text-gray-700">{ad.category}</span>
         </div>
@@ -99,6 +108,8 @@ export default function AdDetailsPage() {
             {ad.title}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            <span>{groupLabel}</span>
+            <span className="w-1 h-1 rounded-full bg-gray-300" />
             <span>{ad.category}</span>
             <span className="w-1 h-1 rounded-full bg-gray-300" />
             <span>تاریخ ثبت: {createdAtFa}</span>
@@ -131,14 +142,11 @@ export default function AdDetailsPage() {
                       key={index}
                       type="button"
                       onClick={() => handleThumbClick(index)}
-                      className={`
-                        relative w-20 h-16 flex-shrink-0 overflow-hidden rounded-md border
-                        ${
-                          isActive
-                            ? 'border-blue-600 ring-1 ring-blue-300'
-                            : 'border-gray-200'
-                        }
-                      `}
+                      className={`relative w-20 h-16 flex-shrink-0 overflow-hidden rounded-md border ${
+                        isActive
+                          ? 'border-blue-600 ring-1 ring-blue-300'
+                          : 'border-gray-200'
+                      }`}
                     >
                       <Image
                         src={thumbSrc}
@@ -161,7 +169,7 @@ export default function AdDetailsPage() {
               </p>
             </section>
 
-            {/* نقشه – تهران/بهارستان */}
+            {/* نقشه – تهران/بهارستان (فعلاً ثابت) */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
               <h2 className="text-lg font-semibold mb-3">موقعیت مکانی</h2>
               <AdLocationMap
@@ -184,6 +192,9 @@ export default function AdDetailsPage() {
                     <span className="font-medium text-gray-700">
                       {ad.category}
                     </span>
+                  </p>
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    گروه اصلی: {groupLabel}
                   </p>
                 </div>
 

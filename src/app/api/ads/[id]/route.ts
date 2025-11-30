@@ -2,15 +2,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
+// طبق داکیومنت جدید Next.js، params باید Promise باشه و قبل از استفاده await بشه
 type RouteParams = {
-  params?: {
-    id?: string;
-  };
+  params: Promise<{
+    id: string;
+  }>;
 };
 
-export async function GET(_req: NextRequest, context: RouteParams) {
+export async function GET(_req: NextRequest, { params }: RouteParams) {
   try {
-    const id = context?.params?.id;
+    // ⬅ اینجا توصیه Next: اول params رو await کن
+    const { id } = await params;
 
     // اگر id وجود نداشته باشد، 400 برگردان
     if (!id) {
@@ -24,7 +26,7 @@ export async function GET(_req: NextRequest, context: RouteParams) {
       where: { id },
     });
 
-    // فقط آگهی‌های منتشرشده را برای عموم برگردان
+    // فقط آگهی‌های منتشر شده را برای عموم برگردان
     if (!ad || ad.status !== "PUBLISHED") {
       return NextResponse.json(
         { error: "آگهی پیدا نشد" },
@@ -36,7 +38,7 @@ export async function GET(_req: NextRequest, context: RouteParams) {
   } catch (error) {
     console.error("❌ GET /api/ads/[id] error:", error);
     return NextResponse.json(
-      { error: "خطای سرور در بارگذاری آگهی" },
+      { error: "خطای سرور در دریافت آگهی" },
       { status: 500 }
     );
   }

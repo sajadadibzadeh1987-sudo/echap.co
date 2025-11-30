@@ -42,6 +42,10 @@ model JobAd {
   // وضعیت آگهی (صف انتشار، منتشر شده، رد شده)
   status JobAdStatus @default(PENDING)
 
+  // 👇 فیلدهای جدید برای دسته‌بندی استاندارد
+  group        String?   // گروه اصلی: JOB / FREELANCER / PRINT_SERVICE / MACHINE / MATERIAL / OTHER
+  categorySlug String?   // اسلاگ دسته: مثلا "job-operator-offset"
+
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
 }

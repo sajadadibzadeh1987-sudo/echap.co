@@ -1,22 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { showSuccess, showError } from "@/lib/toast";
 import JobAdImagesUploader from "@/components/dashboard/JobAdImagesUploader";
+import AdCategoryModal, {
+  type SelectedCategory,
+} from "@/components/ad/AdCategoryModal";
+import {
+  AD_CATEGORIES,
+  AD_GROUP_LABELS,
+} from "@/config/adCategories";
 
 export default function CreateJobAdPage() {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [category, setCategory] = useState("");
   const [phone, setPhone] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // به‌جای true/false، پیام خطا نگه می‌داریم
+  // دسته‌بندی انتخاب‌شده
+  const [selectedCategory, setSelectedCategory] =
+    useState<SelectedCategory | null>(null);
+
+  // باز/بسته بودن مودال دسته‌بندی
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+  // پیشنهادهای هوشمند بر اساس تیتر
+  const [smartSuggestions, setSmartSuggestions] = useState<SelectedCategory[]>([]);
+
+  // خطاها
   const [errors, setErrors] = useState<{
     title?: string;
     description?: string;
@@ -25,28 +41,69 @@ export default function CreateJobAdPage() {
     images?: string;
   }>({});
 
+  // ---- هوشمندی دسته‌بندی بر اساس تیتر آگهی ----
+  useEffect(() => {
+    if (!title.trim()) {
+      setSmartSuggestions([]);
+      return;
+    }
+
+    // اگر کاربر خودش دسته انتخاب کرده، دیگه پیشنهاد نده
+    if (selectedCategory) {
+      setSmartSuggestions([]);
+      return;
+    }
+
+    const tokens = title
+      .trim()
+      .toLowerCase()
+      .split(/\s+/)
+      .filter((t) => t.length > 1);
+
+    if (tokens.length === 0) {
+      setSmartSuggestions([]);
+      return;
+    }
+
+    const matches: SelectedCategory[] = [];
+    for (const cat of AD_CATEGORIES) {
+      const haystack = (
+        cat.titleFa +
+        " " +
+        cat.slug +
+        " " +
+        AD_GROUP_LABELS[cat.group]
+      ).toLowerCase();
+
+      if (tokens.some((tk) => haystack.includes(tk))) {
+        matches.push({
+          group: cat.group,
+          slug: cat.slug,
+          titleFa: cat.titleFa,
+        });
+      }
+    }
+
+    setSmartSuggestions(matches.slice(0, 5)); // حداکثر ۵ پیشنهاد
+  }, [title, selectedCategory]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
 
     const newErrors: typeof errors = {};
 
-    // ولیدیشن دستی + پیام زیر هر فیلد
     if (!title.trim()) newErrors.title = "لطفاً عنوان آگهی را وارد کنید";
     if (!description.trim())
       newErrors.description = "لطفاً توضیحات آگهی را وارد کنید";
-    if (!category.trim())
+    if (!selectedCategory)
       newErrors.category = "لطفاً دسته‌بندی آگهی را مشخص کنید";
     if (!phone.trim()) newErrors.phone = "لطفاً شماره تماس را وارد کنید";
     if (images.length === 0)
       newErrors.images = "لطفاً حداقل یک تصویر برای آگهی انتخاب کنید";
 
     setErrors(newErrors);
-
-    // اگر هر پیغامی وجود دارد، فرم را ارسال نکن
-    if (Object.keys(newErrors).length > 0) {
-      return;
-    }
+    if (Object.keys(newErrors).length > 0) return;
 
     setIsSubmitting(true);
 
@@ -54,8 +111,13 @@ export default function CreateJobAdPage() {
       const formData = new FormData();
       formData.append("title", title.trim());
       formData.append("description", description.trim());
-      formData.append("category", category.trim());
       formData.append("phone", phone.trim());
+
+      if (selectedCategory) {
+        formData.append("category", selectedCategory.titleFa); // برای نمایش
+        formData.append("categorySlug", selectedCategory.slug);
+        formData.append("group", selectedCategory.group);
+      }
 
       images.forEach((img) => formData.append("images", img));
 
@@ -101,13 +163,23 @@ export default function CreateJobAdPage() {
     <div className="max-w-xl mx-auto p-6 bg-white shadow rounded" dir="rtl">
       <h1 className="text-2xl font-bold mb-6">➕ درج آگهی</h1>
 
-      {/* ولیدیشن مرورگر خاموش */}
+      {/* مودال انتخاب دسته‌بندی */}
+      <AdCategoryModal
+        open={isCategoryModalOpen}
+        value={selectedCategory}
+        onClose={() => setIsCategoryModalOpen(false)}
+        onSelect={(cat) => {
+          setSelectedCategory(cat);
+          setErrors((prev) => ({ ...prev, category: undefined }));
+        }}
+      />
+
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
-        {/* عنوان */}
+        {/* عنوان آگهی */}
         <div>
           <input
             type="text"
-            placeholder="عنوان آگهی"
+            placeholder="عنوان آگهی (مثلاً: استخدام اپراتور چاپ افست)"
             className={`w-full border p-2 rounded text-sm ${
               errors.title ? "border-red-500 bg-red-50" : "border-gray-300"
             }`}
@@ -122,7 +194,7 @@ export default function CreateJobAdPage() {
         {/* توضیحات */}
         <div>
           <textarea
-            placeholder="توضیحات"
+            placeholder="توضیحات آگهی"
             className={`w-full border p-2 rounded text-sm min-h-[120px] ${
               errors.description
                 ? "border-red-500 bg-red-50"
@@ -136,17 +208,59 @@ export default function CreateJobAdPage() {
           )}
         </div>
 
-        {/* دسته‌بندی */}
-        <div>
-          <input
-            type="text"
-            placeholder="دسته‌بندی (مثلاً: استخدام، چاپخانه، فریلنسر...)"
-            className={`w-full border p-2 rounded text-sm ${
-              errors.category ? "border-red-500 bg-red-50" : "border-gray-300"
+        {/* فیلد دسته‌بندی آگهی */}
+        <div
+          className={
+            errors.category
+              ? "rounded border border-red-500 bg-red-50 p-2"
+              : "rounded p-0"
+          }
+        >
+          <label className="block text-xs font-medium text-slate-700 mb-1">
+            دسته‌بندی آگهی
+          </label>
+          <button
+            type="button"
+            onClick={() => setIsCategoryModalOpen(true)}
+            className={`w-full text-right border rounded-xl px-3 py-2 text-xs md:text-sm flex items-center justify-between ${
+              errors.category
+                ? "border-red-500 bg-red-50"
+                : "border-slate-300 bg-white hover:bg-slate-50"
             }`}
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-          />
+          >
+            <span className={selectedCategory ? "text-slate-800" : "text-slate-400"}>
+              {selectedCategory
+                ? `${selectedCategory.titleFa} (${AD_GROUP_LABELS[selectedCategory.group]})`
+                : "انتخاب دسته‌بندی آگهی (کلیک کنید)"}
+            </span>
+            <span className="text-[10px] text-slate-400">تغییر دسته‌بندی</span>
+          </button>
+
+          {/* پیشنهادهای هوشمند بر اساس تیتر */}
+          {smartSuggestions.length > 0 && !selectedCategory && (
+            <div className="mt-2 space-y-1">
+              <p className="text-[11px] text-slate-400">
+                پیشنهاد بر اساس عنوان آگهی:
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {smartSuggestions.map((cat) => (
+                  <button
+                    key={cat.slug}
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory(cat);
+                      setSmartSuggestions([]);
+                      setErrors((prev) => ({ ...prev, category: undefined }));
+                    }}
+                    className="px-2.5 py-1 rounded-full text-[11px] border border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
+                  >
+                    {cat.titleFa}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {errors.category && (
             <p className="text-xs text-red-600 mt-1">{errors.category}</p>
           )}

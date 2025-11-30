@@ -33,9 +33,22 @@ export async function POST(req: NextRequest) {
     const phone = formData.get("phone") as string | null;
     const mainImageIndexRaw = formData.get("mainImageIndex") as string | null;
 
+    // 👇 جدید:
+    const group = formData.get("group") as string | null;
+    const categorySlug = formData.get("categorySlug") as string | null;
+
+    // ولیدیشن سمت سرور (حتی اگر فرانت چک کرده)
     if (!title || !description || !category || !phone) {
       return NextResponse.json(
         { error: "اطلاعات فرم ناقص است" },
+        { status: 400 }
+      );
+    }
+
+    // اگر دوست داری group هم اجباری باشه:
+    if (!group || !categorySlug) {
+      return NextResponse.json(
+        { error: "دسته‌بندی آگهی به درستی ارسال نشده است" },
         { status: 400 }
       );
     }
@@ -84,6 +97,9 @@ export async function POST(req: NextRequest) {
           userId: session.user.id,
           images: [],
           status: "PUBLISHED",
+          // 👇 مقادیر جدید
+          group,
+          categorySlug,
         },
       });
 
@@ -150,6 +166,9 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         images: [],
         status: "PENDING",
+        // 👇 مقادیر جدید
+        group,
+        categorySlug,
       },
     });
 
