@@ -1,5 +1,5 @@
 // src/app/layout.tsx
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 
 import "./globals.css";
@@ -11,45 +11,56 @@ import { Toaster } from "react-hot-toast";
 import { SessionWrapper } from "@/components/providers/SessionWrapper";
 import SessionActivityWatcher from "@/components/auth/SessionActivityWatcher";
 
-// 👇 مهم  
+// 🟢 مودال ورود با OTP
 import AuthModal from "@/components/auth/AuthModal";
 
-export const metadata: Metadata = {
-  title: "چاپ ها | سامانه خدمات چاپ",
-  description: "سامانه جامع چاپ، طراحی، آگهی و خدمات بسته‌بندی",
+// ==========================
+// 🔒 جلوگیری کامل از زوم در موبایل
+// ==========================
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: ReactNode;
-}) {
+// ==========================
+// 🔵 Metadata
+// ==========================
+export const metadata: Metadata = {
+  title: "ایچاپ | سامانه خدمات چاپ",
+  description: "ایچاپ – سامانه جامع چاپ، طراحی، آگهی و خدمات بسته‌بندی",
+};
+
+// ==========================
+// 🔵 Layout
+// ==========================
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="fa" dir="rtl">
       <body className="font-yekan antialiased bg-white text-gray-900">
         <SessionWrapper>
-
-          {/* 🟢 مودال ورود با OTP */}
+          
+          {/* 🔵 مودال ورود با OTP */}
           <AuthModal />
 
-          {/* مانیتور فعالیت کاربر */}
+          {/* 🔵 مانیتور تمای فعالیت‌ها */}
           <SessionActivityWatcher />
 
-          {/* هدر */}
+          {/* 🔵 هدر */}
           <SiteHeader />
 
-          {/* محتوای اصلی */}
+          {/* 🔵 محتوای اصلی */}
           <main className="min-h-screen pb-20">{children}</main>
 
-          {/* فوتر دسکتاپ */}
+          {/* 🔵 فوتر دسکتاپ */}
           <SiteFooter />
 
-          {/* ناوبری پایین موبایل */}
+          {/* 🔵 ناوبری موبایل */}
           <MobileBottomNav />
 
-          {/* Toastها */}
+          {/* 🔵 Toast */}
           <Toaster position="top-center" />
-
         </SessionWrapper>
       </body>
     </html>

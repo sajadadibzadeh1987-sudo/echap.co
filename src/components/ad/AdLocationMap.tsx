@@ -1,4 +1,3 @@
-// src/components/ad/AdLocationMap.tsx
 "use client";
 
 import React from "react";
@@ -56,3 +55,6 @@ export function AdLocationMap({
     </div>
   );
 }
+
+// برای اینکه اگر جایی به صورت default import کرده باشیم هم خراب نشود:
+export default AdLocationMap;
