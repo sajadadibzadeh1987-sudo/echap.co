@@ -3,7 +3,7 @@
 
 import React from "react";
 
-interface AdLocationMapProps {
+export interface AdLocationMapProps {
   title?: string;
   height?: number | string;
 }
@@ -30,9 +30,7 @@ export function AdLocationMap({
     <div className="w-full mt-2">
       <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
         <span className="font-medium text-slate-700">{title}</span>
-        <span className="ltr text-[10px]">
-          تهران – میدان بهارستان
-        </span>
+        <span className="ltr text-[10px]">تهران – میدان بهارستان</span>
       </div>
 
       <div className="w-full overflow-hidden rounded-2xl shadow-sm border border-slate-200/80 bg-slate-100">

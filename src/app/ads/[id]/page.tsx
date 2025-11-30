@@ -192,13 +192,13 @@ export default function AdDetailsPage() {
                     منتشر شده
                   </span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify_between">
                   <span className="text-gray-500">تاریخ ثبت</span>
                   <span>{createdAtFa}</span>
                 </div>
               </div>
 
-              {/* دکمه‌های تماس / نمایش شماره */}
+              {/* دکمه‌های تماس */}
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   type="button"
@@ -225,7 +225,7 @@ export default function AdDetailsPage() {
               </div>
             </section>
 
-            {/* باکس هشدار / نکته مهم */}
+            {/* باکس هشدار */}
             <section className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 text-xs text-yellow-900 leading-6">
               برخی هشدارها یا نکات اعتمادسازی و قوانین ایچاپ بعداً اینجا نمایش داده می‌شود؛
               مشابه «خطر‌های قبل از معامله» در دیوار.
