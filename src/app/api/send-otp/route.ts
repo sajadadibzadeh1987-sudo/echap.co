@@ -24,23 +24,38 @@ export async function POST(req: Request) {
     const body = await req.json();
     const phone = normalizeRequestPhone(body.phone);
 
-    // ساخت کد ۶ رقمی
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // ساخت کد ۴ رقمی
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
 
     // صرفاً برای دیباگ
     console.log("📲 کد تایید برای", phone + ":", otpCode);
 
-    // ۱) ذخیره / به‌روزرسانی کد در دیتابیس با Prisma
+    // ۱) ذخیره / آپدیت OTP در دیتابیس
     await prisma.oTP.upsert({
       where: { phone },
       update: { code: otpCode, createdAt: new Date() },
       create: { phone, code: otpCode, createdAt: new Date() },
     });
 
-    // ۲) ارسال پیامک واقعی با Edge API جدید
+    // ۲) تلاش برای ارسال SMS
     console.log(">>> BEFORE_SEND_OTP", phone, otpCode);
-    await sendOtp(phone, otpCode);
-    console.log(">>> AFTER_SEND_OTP", phone, otpCode);
+
+    try {
+      await sendOtp(phone, otpCode);
+      console.log(">>> AFTER_SEND_OTP", phone, otpCode);
+    } catch (smsError) {
+      console.error("❌ EDGE_SMS_ERROR", smsError);
+
+      // پیام محترمانه برای کاربر وقتی سرویس SMS قطع است
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "سامانه پیامکی موقتاً در دسترس نیست. لطفاً چند دقیقه دیگر دوباره تلاش کنید.",
+        },
+        { status: 503 }
+      );
+    }
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
@@ -49,7 +64,7 @@ export async function POST(req: Request) {
     const message =
       err instanceof Error && err.message
         ? err.message
-        : "خطا در ارسال کد تایید. لطفا بعدا دوباره تلاش کنید.";
+        : "خطا در ارسال کد تایید. لطفاً بعداً دوباره تلاش کنید.";
 
     return NextResponse.json(
       { success: false, message },
