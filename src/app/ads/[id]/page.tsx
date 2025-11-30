@@ -96,7 +96,7 @@ export default function AdDetailsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-8">
           {/* ستون چپ: گالری + توضیحات + نقشه */}
           <div className="space-y-6">
-            {/* گالری اصلی شبیه دیوار */}
+            {/* گالری اصلی */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
               <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-xl bg-gray-100">
                 <Image
@@ -108,7 +108,7 @@ export default function AdDetailsPage() {
                 />
               </div>
 
-              {/* Thumbnails */}
+              {/* تصاویر کوچک */}
               <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
                 {images.map((img, index) => {
                   const thumbSrc = buildPublicImageSrc(img);
@@ -162,7 +162,7 @@ export default function AdDetailsPage() {
           {/* ستون راست: اطلاعات اصلی + دکمه‌ها */}
           <aside className="space-y-4">
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:px-6 md:py-6">
-              <div className="flex items-start justify_between gap-3 mb-4">
+              <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold mb-1">
                     {ad.title}
