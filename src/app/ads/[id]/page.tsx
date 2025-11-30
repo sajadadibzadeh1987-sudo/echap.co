@@ -1,3 +1,5 @@
+// src/app/ads/[id]/page.tsx
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -6,6 +8,7 @@ import { useEffect, useState } from 'react';
 
 import { buildPublicImageSrc } from '@/lib/imageFiles';
 import { showError, showSuccess } from '@/lib/toast';
+import { AdLocationMap } from '@/components/ad/AdLocationMap';
 
 interface JobAd {
   id: string;
@@ -15,10 +18,15 @@ interface JobAd {
   phone: string;
   createdAt: string;
   images: string[];
+
+  // برای آینده، اگر لات/لانگ اضافه شد:
+  locationLat?: number | null;
+  locationLng?: number | null;
 }
 
 export default function AdDetailsPage() {
-  const { id } = useParams();
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
 
   const [ad, setAd] = useState<JobAd | null>(null);
   const [mainIndex, setMainIndex] = useState(0);
@@ -71,7 +79,8 @@ export default function AdDetailsPage() {
     );
   }
 
-  const images = ad.images && ad.images.length > 0 ? ad.images : ['/placeholder.png'];
+  const images =
+    ad.images && ad.images.length > 0 ? ad.images : ['/placeholder.png'];
   const mainImageSrc = buildPublicImageSrc(images[mainIndex]);
 
   const handleThumbClick = (index: number) => {
@@ -120,7 +129,11 @@ export default function AdDetailsPage() {
                       onClick={() => handleThumbClick(index)}
                       className={`
                         relative w-20 h-16 flex-shrink-0 overflow-hidden rounded-md border
-                        ${isActive ? 'border-blue-600 ring-1 ring-blue-300' : 'border-gray-200'}
+                        ${
+                          isActive
+                            ? 'border-blue-600 ring-1 ring-blue-300'
+                            : 'border-gray-200'
+                        }
                       `}
                     >
                       <Image
@@ -144,12 +157,15 @@ export default function AdDetailsPage() {
               </p>
             </section>
 
-            {/* جای نقشه – بعداً تکمیل می‌کنیم */}
+            {/* نقشه: فعلاً مرکز تهران، بعداً با lat/lng واقعی آگهی */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
               <h2 className="text-lg font-semibold mb-3">موقعیت مکانی</h2>
-              <div className="h-48 md:h-64 rounded-xl bg-gray-100 flex items-center justify-center text-xs text-gray-400">
-                نقشه اینجا قرار می‌گیرد (بعداً اضافه می‌کنیم)
-              </div>
+              <AdLocationMap
+                title="موقعیت تقریبی آگهی روی نقشه"
+                lat={ad.locationLat ?? undefined}
+                lng={ad.locationLng ?? undefined}
+                height={260}
+              />
             </section>
           </div>
 
@@ -158,10 +174,14 @@ export default function AdDetailsPage() {
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
-                  <h1 className="text-xl md:text-2xl font-bold mb-1">{ad.title}</h1>
+                  <h1 className="text-xl md:text-2xl font-bold mb-1">
+                    {ad.title}
+                  </h1>
                   <p className="text-xs text-gray-500">
                     دسته‌بندی:{' '}
-                    <span className="font-medium text-gray-700">{ad.category}</span>
+                    <span className="font-medium text-gray-700">
+                      {ad.category}
+                    </span>
                   </p>
                 </div>
 
