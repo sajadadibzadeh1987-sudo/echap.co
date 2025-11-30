@@ -1,13 +1,9 @@
 // src/components/ad/AdLocationMap.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 
 interface AdLocationMapProps {
-  /**
-   * لوکیشن آگهی (اگر در آینده lat/lng واقعی آگهی داشته باشیم)
-   * اگر ست نشود، از تهران/بهارستان یا لوکیشن کاربر استفاده می‌کنیم
-   */
   lat?: number;
   lng?: number;
   zoom?: number;
@@ -19,16 +15,11 @@ interface AdLocationMapProps {
 const DEFAULT_LAT = 35.69031;
 const DEFAULT_LNG = 51.43336;
 
-// محدوده‌ای که دور مرکز می‌کشیم (تقریباً کل تهران رو می‌گیرد)
+// محدوده‌ای که دور مرکز می‌کشیم (تقریباً کل تهران را می‌گیرد)
 const LAT_HALF_SPAN = 0.18;
 const LNG_HALF_SPAN = 0.25;
 
 const DEFAULT_ZOOM = 13;
-
-type UserLocation = {
-  lat: number;
-  lng: number;
-};
 
 export function AdLocationMap({
   lat,
@@ -37,46 +28,11 @@ export function AdLocationMap({
   height = 260,
   title = "موقعیت تقریبی روی نقشه",
 }: AdLocationMapProps) {
-  // لوکیشن واقعی کاربر (اگر اجازه بده)
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
-  const [geoTried, setGeoTried] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (!("geolocation" in navigator)) {
-      setGeoTried(true);
-      return;
-    }
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        setUserLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-        setGeoTried(true);
-      },
-      () => {
-        // کاربر رد کرد یا خطا خورد → همون پیش‌فرض تهران
-        setGeoTried(true);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-      }
-    );
-  }, []);
-
-  /**
-   * ترتیب اولویت:
-   * 1) اگر کاربر اجازه لوکیشن داد → مرکز روی لوکیشن کاربر
-   * 2) اگر lat/lng آگهی داده شده باشد → روی همان
-   * 3) در غیر این صورت → میدان بهارستان / تهران
-   */
-  const centerLat =
-    userLocation?.lat ?? lat ?? DEFAULT_LAT;
-  const centerLng =
-    userLocation?.lng ?? lng ?? DEFAULT_LNG;
+  // ترتیب اولویت فعلاً:
+  // 1) لوکیشن آگهی (اگر داشته باشیم)
+  // 2) میدان بهارستان / تهران
+  const centerLat = lat ?? DEFAULT_LAT;
+  const centerLng = lng ?? DEFAULT_LNG;
 
   const iframeHeight =
     typeof height === "number" ? `${height}px` : height;
@@ -87,7 +43,9 @@ export function AdLocationMap({
   const minLng = centerLng - LNG_HALF_SPAN;
   const maxLng = centerLng + LNG_HALF_SPAN;
 
+  // ترتیب bbox در OSM: minLon,minLat,maxLon,maxLat
   const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
+
   const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${centerLat},${centerLng}`;
   const bigMapHref = `https://www.openstreetmap.org/#map=${zoom}/${centerLat}/${centerLng}`;
 
@@ -118,15 +76,7 @@ export function AdLocationMap({
         >
           View larger map
         </a>
-
-        {/* پیام کوچک وضعیت لوکیشن کاربر */}
-        {userLocation ? (
-          <span>نمایش بر اساس موقعیت فعلی شما</span>
-        ) : geoTried ? (
-          <span>نمایش پیش‌فرض تهران (بهارستان)</span>
-        ) : (
-          <span>در حال تلاش برای دریافت موقعیت شما...</span>
-        )}
+        <span>نمایش پیش‌فرض تهران (بهارستان)</span>
       </div>
     </div>
   );
