@@ -32,7 +32,6 @@ export default function AdDetailsPage() {
       try {
         setIsLoading(true);
 
-        // ✅ این روت با فایل API که داریم هماهنگه
         const res = await fetch(`/api/ads/${id}`, {
           cache: 'no-store',
         });
@@ -150,7 +149,7 @@ export default function AdDetailsPage() {
               </p>
             </section>
 
-            {/* نقشه – نسخه ثابت تهران/بهارستان */}
+            {/* نقشه – تهران/بهارستان */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
               <h2 className="text-lg font-semibold mb-3">موقعیت مکانی</h2>
               <AdLocationMap
@@ -162,7 +161,7 @@ export default function AdDetailsPage() {
 
           {/* ستون راست: اطلاعات اصلی + دکمه‌ها */}
           <aside className="space-y-4">
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
+            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:px-6 md:py-6">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold mb-1">
