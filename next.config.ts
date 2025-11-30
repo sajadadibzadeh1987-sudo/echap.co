@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       "default-src 'self'",
       "style-src 'self' 'unsafe-inline' https://www.openstreetmap.org",
       "font-src 'self' data:",
-      "img-src 'self' data: https://*.tile.openstreetmap.org https://www.openstreetmap.org",
+      "img-src 'self' blob: data: https://*.tile.openstreetmap.org https://www.openstreetmap.org",
       "script-src 'self' 'unsafe-inline' https://www.openstreetmap.org",
       "frame-src 'self' https://www.openstreetmap.org",
       "connect-src 'self'",
