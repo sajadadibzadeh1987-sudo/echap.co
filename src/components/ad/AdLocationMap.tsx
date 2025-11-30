@@ -11,11 +11,11 @@ interface AdLocationMapProps {
   title?: string;
 }
 
-// مختصات میدان بهارستان (مرکز پیش‌فرض)
+// مختصات میدان بهارستان
 const DEFAULT_LAT = 35.69031;
 const DEFAULT_LNG = 51.43336;
 
-// محدوده‌ای که دور مرکز می‌کشیم (تقریباً کل تهران را می‌گیرد)
+// محدوده اطراف تهران
 const LAT_HALF_SPAN = 0.18;
 const LNG_HALF_SPAN = 0.25;
 
@@ -28,24 +28,18 @@ export function AdLocationMap({
   height = 260,
   title = "موقعیت تقریبی روی نقشه",
 }: AdLocationMapProps) {
-  // ترتیب اولویت فعلاً:
-  // 1) لوکیشن آگهی (اگر داشته باشیم)
-  // 2) میدان بهارستان / تهران
   const centerLat = lat ?? DEFAULT_LAT;
   const centerLng = lng ?? DEFAULT_LNG;
 
   const iframeHeight =
     typeof height === "number" ? `${height}px` : height;
 
-  // بر اساس مرکز، bbox می‌سازیم
   const minLat = centerLat - LAT_HALF_SPAN;
   const maxLat = centerLat + LAT_HALF_SPAN;
   const minLng = centerLng - LNG_HALF_SPAN;
   const maxLng = centerLng + LNG_HALF_SPAN;
 
-  // ترتیب bbox در OSM: minLon,minLat,maxLon,maxLat
   const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
-
   const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${centerLat},${centerLng}`;
   const bigMapHref = `https://www.openstreetmap.org/#map=${zoom}/${centerLat}/${centerLng}`;
 
@@ -67,7 +61,8 @@ export function AdLocationMap({
         />
       </div>
 
-      <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
+      {/* برای دیباگ همزمان یک لینک مستقیم هم می‌گذاریم */}
+      <div className="mt-1 flex flex-col gap-1 text-[11px] text-slate-400">
         <a
           href={bigMapHref}
           target="_blank"
@@ -76,7 +71,9 @@ export function AdLocationMap({
         >
           View larger map
         </a>
-        <span>نمایش پیش‌فرض تهران (بهارستان)</span>
+        <span className="ltr break-all">
+          debug: <span className="underline">{mapSrc}</span>
+        </span>
       </div>
     </div>
   );
