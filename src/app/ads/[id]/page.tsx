@@ -84,14 +84,26 @@ export default function AdDetailsPage() {
   return (
     <main className="min-h-screen bg-gray-50" dir="rtl">
       <div className="max-w-6xl mx-auto px-4 md:px-8 py-10">
-        {/* بالای صفحه: مسیر / عنوان کوچک */}
-        <div className="mb-6 text-xs text-gray-500 flex flex-wrap gap-1">
+        {/* بالای صفحه: مسیر ناوبری */}
+        <div className="mb-3 text-xs text-gray-500 flex flex-wrap gap-1">
           <span>ایچاپ</span>
           <span> / </span>
           <span>آگهی‌ها</span>
           <span> / </span>
           <span className="text-gray-700">{ad.category}</span>
         </div>
+
+        {/* تیتر اصلی آگهی شبیه دیوار */}
+        <header className="mb-6">
+          <h1 className="text-lg md:text-2xl font-bold text-gray-900">
+            {ad.title}
+          </h1>
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
+            <span>{ad.category}</span>
+            <span className="w-1 h-1 rounded-full bg-gray-300" />
+            <span>تاریخ ثبت: {createdAtFa}</span>
+          </div>
+        </header>
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-8">
           {/* ستون چپ: گالری + توضیحات + نقشه */}
@@ -164,9 +176,9 @@ export default function AdDetailsPage() {
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:px-6 md:py-6">
               <div className="flex items-start justify-between gap-3 mb-4">
                 <div>
-                  <h1 className="text-xl md:text-2xl font-bold mb-1">
-                    {ad.title}
-                  </h1>
+                  <h2 className="text-sm font-semibold mb-1">
+                    جزئیات آگهی
+                  </h2>
                   <p className="text-xs text-gray-500">
                     دسته‌بندی:{' '}
                     <span className="font-medium text-gray-700">
@@ -192,7 +204,7 @@ export default function AdDetailsPage() {
                     منتشر شده
                   </span>
                 </div>
-                <div className="flex justify_between">
+                <div className="flex justify-between">
                   <span className="text-gray-500">تاریخ ثبت</span>
                   <span>{createdAtFa}</span>
                 </div>

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isProd = process.env.NODE_ENV === "production";
+
 const nextConfig: NextConfig = {
   // برای اینکه سایت سریع بالا بیاد:
   typescript: {
@@ -14,8 +16,13 @@ const nextConfig: NextConfig = {
     unoptimized: true,
   },
 
-  // اضافه کردن هدرهای امنیتی (CSP) برای اجازه به OpenStreetMap داخل iframe
+  // هدرهای امنیتی فقط در حالت production
   async headers() {
+    if (!isProd) {
+      // در محیط توسعه (localhost) هیچ CSP ست نکن
+      return [];
+    }
+
     const csp = [
       "default-src 'self'",
       "style-src 'self' 'unsafe-inline' https://www.openstreetmap.org",

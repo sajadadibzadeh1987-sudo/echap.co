@@ -27,26 +27,33 @@ export function AdLocationMap({
 
   return (
     <div className="w-full mt-2">
+      {/* هدر کوچک بالای نقشه */}
       <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
         <span className="font-medium text-slate-700">{title}</span>
-        <span className="ltr text-[10px]">تهران – میدان بهارستان</span>
+        <span className="text-[10px]">تهران – میدان بهارستان</span>
       </div>
 
-      <div className="w-full overflow-hidden rounded-2xl shadow-sm border border-slate-200/80 bg-slate-100">
+      {/* باکس نقشه */}
+      <div
+        className="relative w-full overflow-hidden rounded-2xl shadow-sm border border-slate-200/80 bg-slate-100"
+        style={{ height: iframeHeight }}
+      >
         <iframe
+          title="نقشه موقعیت آگهی"
           src={mapSrc}
-          style={{ width: "100%", height: iframeHeight, border: "0" }}
+          className="w-full h-full border-0 pointer-events-none md:pointer-events-auto"
           loading="lazy"
           referrerPolicy="no-referrer-when-downgrade"
         />
       </div>
 
+      {/* لینک زیر نقشه */}
       <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
         <a
           href={bigMapHref}
           target="_blank"
           rel="noreferrer"
-          className="hover:underline ltr"
+          className="hover:underline"
         >
           View larger map
         </a>
