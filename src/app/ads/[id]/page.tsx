@@ -1,5 +1,3 @@
-// src/app/ads/[id]/page.tsx
-
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -18,15 +16,10 @@ interface JobAd {
   phone: string;
   createdAt: string;
   images: string[];
-
-  // برای آینده، اگر لات/لانگ اضافه شد:
-  locationLat?: number | null;
-  locationLng?: number | null;
 }
 
 export default function AdDetailsPage() {
-  const params = useParams<{ id: string }>();
-  const id = params?.id;
+  const { id } = useParams();
 
   const [ad, setAd] = useState<JobAd | null>(null);
   const [mainIndex, setMainIndex] = useState(0);
@@ -157,13 +150,11 @@ export default function AdDetailsPage() {
               </p>
             </section>
 
-            {/* نقشه: فعلاً مرکز تهران، بعداً با lat/lng واقعی آگهی */}
+            {/* نقشه – نسخه ثابت تهران/بهارستان */}
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
               <h2 className="text-lg font-semibold mb-3">موقعیت مکانی</h2>
               <AdLocationMap
                 title="موقعیت تقریبی آگهی روی نقشه"
-                lat={ad.locationLat ?? undefined}
-                lng={ad.locationLng ?? undefined}
                 height={260}
               />
             </section>
@@ -216,8 +207,12 @@ export default function AdDetailsPage() {
                   onClick={() =>
                     navigator.clipboard
                       .writeText(ad.phone)
-                      .then(() => showSuccess(`شماره ${ad.phone} کپی شد`))
-                      .catch(() => showError('خطا در کپی شماره'))
+                      .then(() =>
+                        showSuccess(`شماره ${ad.phone} کپی شد`)
+                      )
+                      .catch(() =>
+                        showError('خطا در کپی شماره')
+                      )
                   }
                 >
                   اطلاعات تماس

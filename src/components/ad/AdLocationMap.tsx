@@ -4,51 +4,35 @@
 import React from "react";
 
 interface AdLocationMapProps {
-  lat?: number;
-  lng?: number;
-  zoom?: number;
-  height?: number | string;
   title?: string;
+  height?: number | string;
 }
 
-// مختصات میدان بهارستان
-const DEFAULT_LAT = 35.69031;
-const DEFAULT_LNG = 51.43336;
-
-// محدوده اطراف تهران
-const LAT_HALF_SPAN = 0.18;
-const LNG_HALF_SPAN = 0.25;
-
-const DEFAULT_ZOOM = 13;
-
+/**
+ * نسخه ساده و ثابت:
+ * همیشه نقشه‌ی تهران (میدان بهارستان و اطراف) را نشان می‌دهد.
+ * بعد از اینکه مطمئن شدیم روی VPS کار می‌کند، دوباره داینامیک می‌کنیم.
+ */
 export function AdLocationMap({
-  lat,
-  lng,
-  zoom = DEFAULT_ZOOM,
-  height = 260,
   title = "موقعیت تقریبی روی نقشه",
+  height = 260,
 }: AdLocationMapProps) {
-  const centerLat = lat ?? DEFAULT_LAT;
-  const centerLng = lng ?? DEFAULT_LNG;
-
   const iframeHeight =
     typeof height === "number" ? `${height}px` : height;
 
-  const minLat = centerLat - LAT_HALF_SPAN;
-  const maxLat = centerLat + LAT_HALF_SPAN;
-  const minLng = centerLng - LNG_HALF_SPAN;
-  const maxLng = centerLng + LNG_HALF_SPAN;
+  // bbox و marker ثابت برای تهران (تقریباً مرکز شهر)
+  const mapSrc =
+    "https://www.openstreetmap.org/export/embed.html?bbox=51.18336%2C35.51031%2C51.68336%2C35.87031&layer=mapnik&marker=35.69031%2C51.43336";
 
-  const bbox = `${minLng},${minLat},${maxLng},${maxLat}`;
-  const mapSrc = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${centerLat},${centerLng}`;
-  const bigMapHref = `https://www.openstreetmap.org/#map=${zoom}/${centerLat}/${centerLng}`;
+  const bigMapHref =
+    "https://www.openstreetmap.org/?mlat=35.69031&mlon=51.43336#map=12/35.69031/51.43336";
 
   return (
     <div className="w-full mt-2">
       <div className="mb-2 flex items-center justify-between text-xs text-slate-500">
         <span className="font-medium text-slate-700">{title}</span>
         <span className="ltr text-[10px]">
-          lat: {centerLat.toFixed(5)} – lng: {centerLng.toFixed(5)}
+          تهران – میدان بهارستان
         </span>
       </div>
 
@@ -61,8 +45,7 @@ export function AdLocationMap({
         />
       </div>
 
-      {/* برای دیباگ همزمان یک لینک مستقیم هم می‌گذاریم */}
-      <div className="mt-1 flex flex-col gap-1 text-[11px] text-slate-400">
+      <div className="mt-1 flex items-center justify-between text-[11px] text-slate-400">
         <a
           href={bigMapHref}
           target="_blank"
@@ -71,9 +54,7 @@ export function AdLocationMap({
         >
           View larger map
         </a>
-        <span className="ltr break-all">
-          debug: <span className="underline">{mapSrc}</span>
-        </span>
+        <span>نقشه پیش‌فرض تهران (بهارستان)</span>
       </div>
     </div>
   );
