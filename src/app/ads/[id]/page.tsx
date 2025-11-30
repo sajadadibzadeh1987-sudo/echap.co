@@ -162,7 +162,7 @@ export default function AdDetailsPage() {
           {/* ستون راست: اطلاعات اصلی + دکمه‌ها */}
           <aside className="space-y-4">
             <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:px-6 md:py-6">
-              <div className="flex items-start justify-between gap-3 mb-4">
+              <div className="flex items-start justify_between gap-3 mb-4">
                 <div>
                   <h1 className="text-xl md:text-2xl font-bold mb-1">
                     {ad.title}
