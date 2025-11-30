@@ -1,5 +1,44 @@
-node_modules
-.next
+# --- NEXT.js build ---
+.next/
+out/
+dist/
+
+# --- Node ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# --- System files ---
+.DS_Store
+Thumbs.db
+
+# --- Environment variables ---
 .env
 .env.local
-dist
+.env.production
+.env.development
+.env.test
+
+# --- Prisma ---
+prisma/dev.db
+prisma/dev.db-journal
+
+# --- Uploads from users (VERY IMPORTANT) ---
+public/uploads/
+public/uploads/thumbs/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- VSCode ---
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# --- OS junk ---
+*.swp
+*.tmp
+*.temp
