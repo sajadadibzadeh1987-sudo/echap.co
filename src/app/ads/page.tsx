@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import prisma from "@/lib/prisma";
 import AdCard from "@/components/AdCard";
 import AdsFilterSidebar from "@/components/ad/AdsFilterSidebar";
+import AdsMobileFilters from "@/components/ad/AdsMobileFilters";
 import { JobAd, JobAdStatus, Prisma } from "@prisma/client";
 
 type ListAd = {
@@ -63,10 +64,11 @@ export default async function AdsPage({ searchParams }: AdsPageProps) {
 
         {/* چیدمان اصلی:
             - در دسکتاپ: ستون فیلتر سمت راست، لیست آگهی‌ها سمت چپ
+            - در موبایل/تبلت: فقط لیست + فیلتر موبایل در بالا
         */}
         <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-          {/* ستون فیلتر – چون در RTL اولین آیتم flex-row است، سمت راست قرار می‌گیرد */}
-          <div className="w-full shrink-0 lg:w-72 xl:w-80">
+          {/* ستون فیلتر دسکتاپ (فقط ≥ lg) */}
+          <div className="hidden lg:block w-72 xl:w-80 shrink-0">
             <AdsFilterSidebar
               currentGroup={resolvedSearchParams.group}
               currentCategory={resolvedSearchParams.category}
@@ -75,8 +77,13 @@ export default async function AdsPage({ searchParams }: AdsPageProps) {
             />
           </div>
 
-          {/* ستون اصلی: لیست آگهی‌ها */}
+          {/* ستون اصلی: فیلتر موبایل + لیست آگهی‌ها */}
           <div className="flex-1">
+            {/* فیلتر موبایل (شهر، جستجو، دسته‌ها شبیه دیوار) */}
+            <div className="mb-4 lg:hidden">
+              <AdsMobileFilters />
+            </div>
+
             <Suspense fallback={<AdsListSkeleton />}>
               <AdsList searchParams={resolvedSearchParams} />
             </Suspense>
@@ -107,7 +114,6 @@ async function AdsList({
           ],
         }
       : {}),
-    // فعلاً backend فقط بر اساس category واقعی جدول فیلتر می‌کند
     ...(category
       ? {
           category,

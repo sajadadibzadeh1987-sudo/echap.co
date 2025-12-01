@@ -1,17 +1,18 @@
+// src/components/ad/AdsMobileFilters.tsx
 "use client";
 
 import type { ReactNode, FormEvent } from "react";
 import { useEffect, useState } from "react";
 import {
-  FiMapPin,
-  FiSearch,
   FiImage,
   FiBriefcase,
   FiTool,
   FiUsers,
   FiLayers,
   FiPrinter,
+  FiSearch,
 } from "react-icons/fi";
+
 import { useRouter, useSearchParams } from "next/navigation";
 
 type Category = {
@@ -83,43 +84,36 @@ const CATEGORIES: Category[] = [
   },
 ];
 
-const CITIES = ["تهران", "کرج", "اصفهان", "شیراز", "تبریز", "مشهد"];
-
 type Props = {
-  // اگر بعداً خواستی از بیرون هم کنترل کنی
-  onChangeCity?: (city: string) => void;
   onToggleHasImage?: (value: boolean) => void;
   onSelectCategory?: (categoryId: string, subcategory?: string) => void;
 };
 
 export default function AdsMobileFilters({
-  onChangeCity,
   onToggleHasImage,
   onSelectCategory,
 }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [city, setCity] = useState<string>("تهران");
   const [hasImage, setHasImage] = useState(
     searchParams?.get("hasImage") === "1"
   );
 
-  const [openSheet, setOpenSheet] = useState<
-    "city" | "category" | "search" | null
-  >(null);
+  const [openSheet, setOpenSheet] = useState<"category" | null>(null);
   const [activeCategory, setActiveCategory] = useState<Category | null>(null);
-  const [searchText, setSearchText] = useState(searchParams?.get("q") ?? "");
-  const [categorySearch, setCategorySearch] = useState("");
 
-  // برای نمایش اینکه چه دسته‌ای انتخاب شده
+  const [categorySearch, setCategorySearch] = useState("");
+  const [searchText] = useState("");
+
+
+  // نمایش برچسب دسته انتخاب شده
   const [selectedGroupLabel, setSelectedGroupLabel] = useState<string | null>(
     null
   );
   const [selectedSubLabel, setSelectedSubLabel] = useState<string | null>(null);
 
   useEffect(() => {
-    // اگر از URL برگشتی، برچسب فیلتر فعال را sync کن
     const group = searchParams?.get("group");
     const category = searchParams?.get("category");
 
@@ -129,7 +123,12 @@ export default function AdsMobileFilters({
         setSelectedGroupLabel(cat.label);
         setSelectedSubLabel(category ?? null);
       }
+    } else {
+      setSelectedGroupLabel(null);
+      setSelectedSubLabel(null);
     }
+
+    setHasImage(searchParams?.get("hasImage") === "1");
   }, [searchParams]);
 
   const applyFilters = (updates: Record<string, string | null>) => {
@@ -142,16 +141,6 @@ export default function AdsMobileFilters({
 
     const query = params.toString();
     router.push(query ? `/ads?${query}` : "/ads", { scroll: false });
-  };
-
-  /* ---------- handlers ---------- */
-
-  const handleCitySelect = (c: string) => {
-    setCity(c);
-    onChangeCity?.(c);
-    // هنوز backend روی شهر فیلتر نمی‌کند، ولی می‌توانیم در URL نگه داریم:
-    applyFilters({ city: c });
-    setOpenSheet(null);
   };
 
   const handleToggleHasImage = () => {
@@ -174,7 +163,6 @@ export default function AdsMobileFilters({
 
       onSelectCategory?.(activeCategory.id, sub);
 
-      // ✅ فیلتر واقعی روی URL
       applyFilters({
         group: activeCategory.id,
         category: sub,
@@ -183,11 +171,19 @@ export default function AdsMobileFilters({
     setOpenSheet(null);
   };
 
+  const handleClearCategory = () => {
+    setSelectedGroupLabel(null);
+    setSelectedSubLabel(null);
+    applyFilters({
+      group: null,
+      category: null,
+    });
+  };
+
   const handleSearchSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const trimmed = searchText.trim();
     applyFilters({ q: trimmed || null });
-    // شیت باز می‌ماند شبیه دیوار
   };
 
   const filteredSubcategories =
@@ -197,27 +193,6 @@ export default function AdsMobileFilters({
 
   return (
     <>
-      {/* ردیف شهر + جستجو (شبیه دیوار) */}
-      <div className="mb-3 flex gap-2 md:hidden">
-        <button
-          type="button"
-          onClick={() => setOpenSheet("city")}
-          className="flex items-center gap-1 rounded-xl bg-white px-3 py-2 text-xs font-medium text-slate-700 shadow-sm"
-        >
-          <FiMapPin className="h-4 w-4" />
-          <span>{city}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setOpenSheet("search")}
-          className="flex flex-1 items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs text-slate-500 shadow-sm"
-        >
-          <FiSearch className="h-4 w-4" />
-          <span className="truncate">جستجو در آگهی‌های ایچاپ…</span>
-        </button>
-      </div>
-
       {/* کارت مستقل "فقط آگهی‌های دارای تصویر" */}
       <div className="mb-3 rounded-2xl bg-white p-3 shadow-sm md:hidden">
         <div className="flex items-center justify-between">
@@ -251,14 +226,24 @@ export default function AdsMobileFilters({
         </div>
       </div>
 
-      {/* اگر دسته‌ای انتخاب شده، زیرش نشان بده */}
+      {/* اگر دسته‌ای انتخاب شده، متن + دکمه «همه آگهی‌ها» */}
       {(selectedGroupLabel || selectedSubLabel) && (
-        <div className="mb-2 text-[11px] text-slate-500 md:hidden">
-          فیلتر فعال:{" "}
-          <span className="font-medium">
-            {selectedGroupLabel}
-            {selectedSubLabel ? ` / ${selectedSubLabel}` : ""}
-          </span>
+        <div className="mb-2 flex items-center justify-between text-[11px] text-slate-500 md:hidden">
+          <div className="truncate">
+            فیلتر فعال:{" "}
+            <span className="font-medium">
+              {selectedGroupLabel}
+              {selectedSubLabel ? ` / ${selectedSubLabel}` : ""}
+            </span>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleClearCategory}
+            className="ml-2 inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-medium text-slate-700 shadow-sm hover:bg-slate-50"
+          >
+            <span>همه آگهی‌ها</span>
+          </button>
         </div>
       )}
 
@@ -279,42 +264,17 @@ export default function AdsMobileFilters({
         ))}
       </section>
 
-      {/* ===== Bottom Sheets ===== */}
-
-      {/* انتخاب شهر */}
-      <BottomSheet
-        open={openSheet === "city"}
-        title="انتخاب شهر"
-        onClose={() => setOpenSheet(null)}
-      >
-        <ul className="space-y-1 text-sm">
-          {CITIES.map((c) => (
-            <li key={c}>
-              <button
-                type="button"
-                onClick={() => handleCitySelect(c)}
-                className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-right ${
-                  c === city ? "bg-red-50 text-red-600" : "text-slate-700"
-                }`}
-              >
-                <span>{c}</span>
-                {c === city && (
-                  <span className="text-xs font-medium">انتخاب‌شده</span>
-                )}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </BottomSheet>
-
-      {/* زیرمجموعه‌های دسته‌بندی (اسکرین ۲، با سرچ در بالا) */}
+      {/* ===== Bottom Sheet زیرمجموعه‌های دسته‌بندی ===== */}
       <BottomSheet
         open={openSheet === "category" && !!activeCategory}
         title={activeCategory?.label ?? "دسته‌بندی آگهی‌ها"}
         onClose={() => setOpenSheet(null)}
       >
         {/* کادر جستجو داخل شیت دسته‌بندی */}
-        <div className="mb-3 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2">
+        <form
+          onSubmit={handleSearchSubmit}
+          className="mb-3 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2"
+        >
           <FiSearch className="h-4 w-4 text-slate-500" />
           <input
             value={categorySearch}
@@ -322,7 +282,7 @@ export default function AdsMobileFilters({
             className="flex-1 border-0 bg-transparent text-sm text-slate-800 outline-none"
             placeholder="جستجو در دسته‌ها..."
           />
-        </div>
+        </form>
 
         <ul className="space-y-1 text-sm">
           {filteredSubcategories.map((sub) => (
@@ -343,49 +303,6 @@ export default function AdsMobileFilters({
             </li>
           )}
         </ul>
-      </BottomSheet>
-
-      {/* جستجو (اسکرین ۳) */}
-      <BottomSheet
-        open={openSheet === "search"}
-        title="جستجو"
-        onClose={() => setOpenSheet(null)}
-        fullHeight
-      >
-        <form
-          onSubmit={handleSearchSubmit}
-          className="mb-3 flex items-center gap-2 rounded-xl bg-slate-100 px-3 py-2"
-        >
-          <button type="submit">
-            <FiSearch className="h-4 w-4 text-slate-500" />
-          </button>
-          <input
-            autoFocus
-            value={searchText}
-            onChange={(e) => setSearchText(e.target.value)}
-            className="flex-1 border-0 bg-transparent text-sm text-slate-800 outline-none"
-            placeholder="جستجو در عنوان، توضیحات، دسته‌ها..."
-          />
-        </form>
-
-        {/* برای الان فقط زیرمجموعه‌های دسته اول را نمایش می‌دهیم (نمونه) */}
-        <div className="space-y-1 text-sm">
-          {(activeCategory ?? CATEGORIES[0]).subcategories.map((sub) => (
-            <button
-              key={sub}
-              type="button"
-              onClick={() => handleSelectSubcategory(sub)}
-              className="flex w-full items-center justify-between rounded-xl bg-white px-3 py-2 text-right text-slate-700 shadow-sm"
-            >
-              <span>{sub}</span>
-            </button>
-          ))}
-        </div>
-
-        <div className="mt-4 text-[11px] text-slate-400">
-          ** فعلاً این بخش نمونه است؛ بعداً می‌توانیم آن را به جستجوی
-          واقعی آگهی‌ها وصل کنیم (API).
-        </div>
       </BottomSheet>
     </>
   );
@@ -414,7 +331,7 @@ function BottomSheet({
     if (open) {
       setVisible(true);
     } else {
-      const t = setTimeout(() => setVisible(false), 200); // مدت انیمیشن
+      const t = setTimeout(() => setVisible(false), 200);
       return () => clearTimeout(t);
     }
   }, [open]);

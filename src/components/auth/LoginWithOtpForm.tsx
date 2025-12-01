@@ -158,7 +158,7 @@ const LoginWithOtpForm: React.FC = () => {
           <Input
             type="text"
             dir="ltr"
-            placeholder="کد ۶ رقمی"
+            placeholder="کد 4 رقمی"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
             disabled={loading}

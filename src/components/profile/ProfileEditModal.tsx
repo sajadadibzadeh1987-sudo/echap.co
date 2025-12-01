@@ -102,7 +102,7 @@ export default function ProfileEditModal({
           <Input
             value={firstName}
             onChange={(e) => setFirstName(e.target.value)}
-            placeholder="مثلاً سجاد"
+            placeholder="نام"
           />
         </div>
 
@@ -111,7 +111,7 @@ export default function ProfileEditModal({
           <Input
             value={lastName}
             onChange={(e) => setLastName(e.target.value)}
-            placeholder="مثلاً ادیب‌زاده"
+            placeholder="نام خانوادگی"
           />
         </div>
 

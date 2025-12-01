@@ -3,15 +3,15 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Search,
-  SlidersHorizontal,
   ChevronDown,
   User,
   Home,
   LogOut,
+  MapPin,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import useModalStore from "@/hooks/use-modal-store";
@@ -176,17 +176,26 @@ const megaMenuItems: MegaMenuItem[] = [
   },
 ];
 
+// شهرها (مشابه CITIES در AdsMobileFilters)
+const CITY_OPTIONS = ["تهران", "کرج", "اصفهان", "شیراز", "تبریز", "مشهد"];
+
 export default function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [isHoveringPanel, setIsHoveringPanel] = useState(false);
+
   const [showDesktopSearch, setShowDesktopSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const [city, setCity] = useState("تهران");
+  const [isCityMenuOpen, setIsCityMenuOpen] = useState(false);
 
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
 
@@ -201,6 +210,17 @@ export default function SiteHeader() {
     router.push("/");
   };
 
+  // انتخاب شهر → ست شدن روی /ads?city=...
+  const handleCitySelect = (selected: string) => {
+    setCity(selected);
+    setIsCityMenuOpen(false);
+
+    const params = new URLSearchParams(searchParams?.toString());
+    params.set("city", selected);
+
+    router.push(`/ads?${params.toString()}`);
+  };
+
   // اسکرول شفاف/سایه هدر
   useEffect(() => {
     const handleScroll = () => {
@@ -210,27 +230,29 @@ export default function SiteHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // جستجوی خودکار (بدون اینتر) → هدایت به /ads?q=...
+  // جستجوی خودکار → /ads?q=...
   useEffect(() => {
     const timeout = setTimeout(() => {
       const trimmed = searchTerm.trim();
+      const params = new URLSearchParams(searchParams?.toString());
 
-      // اگر خالی است و روی صفحه آگهی‌ها هستیم، فقط فیلتر q حذف شود
       if (!trimmed) {
+        // حذف q
+        params.delete("q");
+
         if (pathname.startsWith("/ads")) {
-          router.push("/ads");
+          const qs = params.toString();
+          router.push(qs ? `/ads?${qs}` : "/ads");
         }
         return;
       }
 
-      const params = new URLSearchParams();
       params.set("q", trimmed);
-
       router.push(`/ads?${params.toString()}`);
     }, 500);
 
     return () => clearTimeout(timeout);
-  }, [searchTerm, pathname, router]);
+  }, [searchTerm, pathname, router, searchParams]);
 
   const clearHoverTimeout = () => {
     if (hoverTimeout.current) {
@@ -254,6 +276,48 @@ export default function SiteHeader() {
   };
 
   const activeItem = megaMenuItems.find((item) => item.id === activeMenuId);
+
+  // کامپوننت کوچک انتخاب شهر (در دسکتاپ و موبایل استفاده می‌شود)
+  const CitySelector = ({ compact = false }: { compact?: boolean }) => (
+    <div className="relative">
+      <button
+        type="button"
+        onClick={() => setIsCityMenuOpen((prev) => !prev)}
+        className={`
+          inline-flex items-center gap-1 rounded-full border border-gray-200
+          bg-white px-3 py-1.5 text-xs font-medium text-gray-700
+          hover:bg-gray-50 transition
+          ${compact ? "min-w-[78px] justify-center" : "min-w-[100px]"}
+        `}
+      >
+        <MapPin className="w-3.5 h-3.5 text-gray-500" />
+        <span className="truncate">{city}</span>
+        <ChevronDown className="w-3 h-3 text-gray-400" />
+      </button>
+
+      {isCityMenuOpen && (
+        <div
+          className="absolute right-0 mt-1 w-40 rounded-2xl border border-gray-200 bg-white shadow-lg z-50 overflow-hidden"
+          dir="rtl"
+        >
+          {CITY_OPTIONS.map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => handleCitySelect(c)}
+              className={`w-full px-3 py-2 text-right text-xs ${
+                c === city
+                  ? "bg-red-50 text-red-600 font-semibold"
+                  : "text-gray-700 hover:bg-gray-50"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <header
@@ -386,8 +450,12 @@ export default function SiteHeader() {
         {/* کادر جستجوی دسکتاپ (زیر هدر، وقتی آیکون جستجو فعال است) */}
         {showDesktopSearch && (
           <div className="hidden md:flex items-center justify-end pb-3">
-            <div className="w-full max-w-sm">
-              <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2 shadow-sm">
+            <div className="w-full max-w-xl flex gap-2">
+              {/* انتخاب شهر */}
+              <CitySelector />
+
+              {/* سرچ با هوشمند سازی q روی /ads */}
+              <div className="flex items-center gap-2 flex-1 rounded-full bg-gray-100 px-3 py-2 shadow-sm">
                 <Search className="w-4 h-4 text-gray-400" />
                 <input
                   type="text"
@@ -401,10 +469,10 @@ export default function SiteHeader() {
           </div>
         )}
 
-        {/* نوار جستجو و فیلتر موبایل */}
+        {/* نوار جستجو و انتخاب شهر موبایل (بدون آیکون فیلتر، تمام عرض) */}
         <div
           className={`
-            flex md:hidden items-center gap-2
+            flex md:hidden items-center
             px-4 py-3
             border-b border-gray-200
             sticky top-0 z-40 backdrop-blur-md
@@ -412,49 +480,34 @@ export default function SiteHeader() {
             ${isScrolled ? "bg-white/80 shadow-sm" : "bg-white/100 shadow-none"}
           `}
         >
-          {/* جستجو موبایل */}
-          <div
-            className="
-              flex items-center gap-2
-              flex-1
-              rounded-full
-              bg-gray-100/90
-              px-3 py-2
-              transition
-            "
-          >
-            <Search className="w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="جستجو در آگهی‌های ایچاپ..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="
-                w-full bg-transparent border-none outline-none
-                text-sm text-gray-800 placeholder:text-gray-400
-              "
-            />
-          </div>
+          <div className="flex w-full items-center gap-2">
+            {/* انتخاب شهر موبایل */}
+            <CitySelector compact />
 
-          {/* دکمه فیلتر موبایل → باز کردن مودال فیلتر آگهی‌ها */}
-          <button
-            type="button"
-            onClick={() => openModal("ads-filter")}
-            className="
-              flex items-center justify-center
-              w-10 h-10
-              rounded-full
-              bg-gray-100/90
-              border border-gray-200
-              text-gray-700
-              hover:bg-gray-200
-              active:bg-gray-300
-              transition
-            "
-            aria-label="فیلتر آگهی‌ها"
-          >
-            <SlidersHorizontal className="w-4 h-4" />
-          </button>
+            {/* سرچ موبایل تمام عرض باقی‌مانده */}
+            <div
+              className="
+                flex items-center gap-2
+                flex-1
+                rounded-full
+                bg-gray-100/90
+                px-3 py-2
+                transition
+              "
+            >
+              <Search className="w-4 h-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="جستجو در آگهی‌های ایچاپ..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="
+                  w-full bg-transparent border-none outline-none
+                  text-sm text-gray-800 placeholder:text-gray-400
+                "
+              />
+            </div>
+          </div>
         </div>
       </div>
 
