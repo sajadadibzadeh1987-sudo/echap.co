@@ -236,17 +236,19 @@ export default function SiteHeader() {
       const trimmed = searchTerm.trim();
       const params = new URLSearchParams(searchParams?.toString());
 
+      // اگر کاربر چیزی ننوشته
       if (!trimmed) {
-        // حذف q
-        params.delete("q");
-
-        if (pathname.startsWith("/ads")) {
+        // فقط وقتی خودِ صفحه لیست آگهی‌ها هستیم q را پاک و رفرش کن
+        if (pathname === "/ads") {
+          params.delete("q");
           const qs = params.toString();
           router.push(qs ? `/ads?${qs}` : "/ads");
         }
+        // روی صفحات دیگر (مثل /ads/[id]) هیچ کاری نکن
         return;
       }
 
+      // اگر متن جستجو داریم، همیشه برو به صفحه لیست آگهی‌ها با q
       params.set("q", trimmed);
       router.push(`/ads?${params.toString()}`);
     }, 500);
