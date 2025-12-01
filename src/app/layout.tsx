@@ -14,6 +14,9 @@ import SessionActivityWatcher from "@/components/auth/SessionActivityWatcher";
 // 🟢 مودال ورود با OTP
 import AuthModal from "@/components/auth/AuthModal";
 
+// 🟢 مودال فیلتر آگهی‌ها
+import AdsFilterModal from "@/components/ad/AdsFilterModal";
+
 // ==========================
 // 🔒 جلوگیری کامل از زوم در موبایل
 // ==========================
@@ -40,26 +43,28 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="fa" dir="rtl">
       <body className="font-yekan antialiased bg-white text-gray-900">
         <SessionWrapper>
-          
-          {/* 🔵 مودال ورود با OTP */}
-          <AuthModal />
-
-          {/* 🔵 مانیتور تمای فعالیت‌ها */}
+          {/* مانیتور فعالیت سشن */}
           <SessionActivityWatcher />
 
-          {/* 🔵 هدر */}
+          {/* مودال ورود با OTP */}
+          <AuthModal />
+
+          {/* مودال فیلتر آگهی‌ها (سراسری) */}
+          <AdsFilterModal />
+
+          {/* هدر */}
           <SiteHeader />
 
-          {/* 🔵 محتوای اصلی */}
+          {/* محتوای اصلی */}
           <main className="min-h-screen pb-20">{children}</main>
 
-          {/* 🔵 فوتر دسکتاپ */}
+          {/* فوتر دسکتاپ */}
           <SiteFooter />
 
-          {/* 🔵 ناوبری موبایل */}
+          {/* ناوبری موبایل پایین صفحه */}
           <MobileBottomNav />
 
-          {/* 🔵 Toast */}
+          {/* Toast */}
           <Toaster position="top-center" />
         </SessionWrapper>
       </body>

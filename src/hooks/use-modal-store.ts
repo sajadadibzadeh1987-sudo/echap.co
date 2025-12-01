@@ -1,6 +1,6 @@
 import { create } from "zustand"
 
-type ModalType = "auth" | "editProfile" | "selectRole" | null
+type ModalType = "auth" | "editProfile" | "selectRole" | "ads-filter" | null
 
 interface ModalStore {
   type: ModalType

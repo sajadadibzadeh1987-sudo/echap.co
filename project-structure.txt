@@ -77,7 +77,9 @@
 │   ├── providers.tsx
 ├── components/
 │   ├── ad/
+│   │   ├── AdCategoryModal.tsx
 │   │   ├── AdLocationMap.tsx
+│   │   ├── AdsFilterSidebar.tsx
 │   ├── AdCard.tsx
 │   ├── AdPopup.tsx
 │   ├── auth/
@@ -132,7 +134,10 @@
 │   │   ├── radio-group.tsx
 │   │   ├── StoreCard.tsx
 │   │   ├── textarea.tsx
+├── config/
+│   ├── adCategories.ts
 ├── data/
+│   ├── adCategories.ts
 │   ├── ads.ts
 │   ├── homeSections.ts
 │   ├── menu.ts

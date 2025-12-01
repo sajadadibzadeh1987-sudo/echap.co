@@ -34,7 +34,7 @@ interface MegaMenuItem {
   sections: MegaMenuSection[];
 }
 
-// نوع هوک مودال بر اساس AuthModal
+// نوع هوک مودال بر اساس ساختار فعلی پروژه
 interface AuthModalStore {
   isOpen: boolean;
   type: string | null;
@@ -100,12 +100,12 @@ const megaMenuItems: MegaMenuItem[] = [
         links: [
           {
             label: "آگهی‌های استخدام",
-            href: "/ads/jobs",
+            href: "/ads?group=JOB",
             description: "فرصت‌های شغلی صنعت چاپ و بسته‌بندی",
           },
           {
             label: "خرید و فروش ماشین‌آلات",
-            href: "/ads/machines",
+            href: "/ads?group=MACHINE",
             description: "ماشین‌آلات نو و دست‌دوم چاپ و بسته‌بندی",
           },
           {
@@ -180,6 +180,9 @@ export default function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [isHoveringPanel, setIsHoveringPanel] = useState(false);
+  const [showDesktopSearch, setShowDesktopSearch] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pathname = usePathname();
@@ -198,6 +201,7 @@ export default function SiteHeader() {
     router.push("/");
   };
 
+  // اسکرول شفاف/سایه هدر
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10);
@@ -205,6 +209,28 @@ export default function SiteHeader() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  // جستجوی خودکار (بدون اینتر) → هدایت به /ads?q=...
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      const trimmed = searchTerm.trim();
+
+      // اگر خالی است و روی صفحه آگهی‌ها هستیم، فقط فیلتر q حذف شود
+      if (!trimmed) {
+        if (pathname.startsWith("/ads")) {
+          router.push("/ads");
+        }
+        return;
+      }
+
+      const params = new URLSearchParams();
+      params.set("q", trimmed);
+
+      router.push(`/ads?${params.toString()}`);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm, pathname, router]);
 
   const clearHoverTimeout = () => {
     if (hoverTimeout.current) {
@@ -312,9 +338,10 @@ export default function SiteHeader() {
               <Home className="w-4 h-4 text-gray-700" />
             </button>
 
-            {/* جستجو */}
+            {/* جستجو دسکتاپ (باز/بسته شدن کادر) */}
             <button
               type="button"
+              onClick={() => setShowDesktopSearch((prev) => !prev)}
               className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition"
               aria-label="جستجو در ایچاپ"
             >
@@ -356,6 +383,24 @@ export default function SiteHeader() {
           </div>
         </div>
 
+        {/* کادر جستجوی دسکتاپ (زیر هدر، وقتی آیکون جستجو فعال است) */}
+        {showDesktopSearch && (
+          <div className="hidden md:flex items-center justify-end pb-3">
+            <div className="w-full max-w-sm">
+              <div className="flex items-center gap-2 rounded-full bg-gray-100 px-3 py-2 shadow-sm">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="جستجو در آگهی‌های ایچاپ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* نوار جستجو و فیلتر موبایل */}
         <div
           className={`
@@ -367,6 +412,7 @@ export default function SiteHeader() {
             ${isScrolled ? "bg-white/80 shadow-sm" : "bg-white/100 shadow-none"}
           `}
         >
+          {/* جستجو موبایل */}
           <div
             className="
               flex items-center gap-2
@@ -380,7 +426,9 @@ export default function SiteHeader() {
             <Search className="w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="جستجو در ایچاپ..."
+              placeholder="جستجو در آگهی‌های ایچاپ..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="
                 w-full bg-transparent border-none outline-none
                 text-sm text-gray-800 placeholder:text-gray-400
@@ -388,8 +436,10 @@ export default function SiteHeader() {
             />
           </div>
 
+          {/* دکمه فیلتر موبایل → باز کردن مودال فیلتر آگهی‌ها */}
           <button
             type="button"
+            onClick={() => openModal("ads-filter")}
             className="
               flex items-center justify-center
               w-10 h-10
@@ -401,7 +451,7 @@ export default function SiteHeader() {
               active:bg-gray-300
               transition
             "
-            aria-label="فیلتر"
+            aria-label="فیلتر آگهی‌ها"
           >
             <SlidersHorizontal className="w-4 h-4" />
           </button>
