@@ -1,30 +1,43 @@
+// src/app/not-found.tsx
 import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="text-center space-y-4" dir="rtl">
-        <h1 className="text-3xl font-bold text-gray-900">صفحه یافت نشد</h1>
-        <p className="text-gray-600 text-sm">
-          ممکن است صفحه حذف شده باشد یا آدرس اشتباه باشد.
-        </p>
+    <div className="min-h-[60vh] flex items-center justify-center px-4">
+      <div className="max-w-md w-full text-center space-y-6">
+        <div className="space-y-2">
+          <p className="text-xs font-semibold tracking-widest text-gray-400">
+            خطای ۴۰۴
+          </p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            صفحه‌ای که دنبالش هستید پیدا نشد
+          </h1>
+          <p className="text-sm text-gray-500 leading-relaxed">
+            ممکن است آگهی حذف شده باشد، آدرس را اشتباه وارد کرده باشید
+            یا صفحه به محل دیگری منتقل شده باشد.
+          </p>
+        </div>
 
-        <div className="flex flex-col items-center gap-3 mt-4">
+        <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
           <Link
             href="/"
-            className="px-5 py-2 rounded-full bg-gray-900 text-white text-sm hover:bg-gray-800 transition"
+            className="inline-flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-medium bg-gray-900 text-white hover:bg-black transition"
           >
-            بازگشت به صفحه اصلی
+            بازگشت به صفحه اصلی ایچاپ
           </Link>
 
           <Link
             href="/ads"
-            className="px-5 py-2 rounded-full border border-gray-300 text-gray-700 text-sm hover:bg-gray-100 transition"
+            className="inline-flex items-center justify-center px-4 py-2.5 rounded-full text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition"
           >
-            رفتن به آگهی‌ها
+            مشاهده آگهی‌ها
           </Link>
         </div>
+
+        <p className="text-[11px] text-gray-400 mt-4">
+          اگر فکر می‌کنید این یک خطاست، بعداً دوباره تلاش کنید یا با پشتیبانی تماس بگیرید.
+        </p>
       </div>
-    </main>
+    </div>
   );
 }
