@@ -1,10 +1,13 @@
 // src/app/layout.tsx
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 
 import "./globals.css";
 
+// 👇 مسیر درست هدر
 import SiteHeader from "@/components/layout/SiteHeader";
+
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import SiteFooter from "@/components/SiteFooter";
 import { Toaster } from "react-hot-toast";
@@ -13,9 +16,6 @@ import SessionActivityWatcher from "@/components/auth/SessionActivityWatcher";
 
 // 🟢 مودال ورود با OTP
 import AuthModal from "@/components/auth/AuthModal";
-
-// 🟢 مودال فیلتر آگهی‌ها
-import AdsFilterModal from "@/components/ad/AdsFilterModal";
 
 // ==========================
 // 🔒 جلوگیری کامل از زوم در موبایل
@@ -43,28 +43,27 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="fa" dir="rtl">
       <body className="font-yekan antialiased bg-white text-gray-900">
         <SessionWrapper>
-          {/* مانیتور فعالیت سشن */}
-          <SessionActivityWatcher />
-
-          {/* مودال ورود با OTP */}
+          {/* 🔵 مودال ورود با OTP */}
           <AuthModal />
 
-          {/* مودال فیلتر آگهی‌ها (سراسری) */}
-          <AdsFilterModal />
+          {/* 🔵 مانیتور تمام فعالیت‌ها */}
+          <SessionActivityWatcher />
 
-          {/* هدر */}
-          <SiteHeader />
+          {/* 🔵 هدر داخل Suspense تا ارور useSearchParams برطرف شود */}
+          <Suspense fallback={null}>
+            <SiteHeader />
+          </Suspense>
 
-          {/* محتوای اصلی */}
+          {/* 🔵 محتوای اصلی */}
           <main className="min-h-screen pb-20">{children}</main>
 
-          {/* فوتر دسکتاپ */}
+          {/* 🔵 فوتر دسکتاپ */}
           <SiteFooter />
 
-          {/* ناوبری موبایل پایین صفحه */}
+          {/* 🔵 ناوبری موبایل */}
           <MobileBottomNav />
 
-          {/* Toast */}
+          {/* 🔵 Toast */}
           <Toaster position="top-center" />
         </SessionWrapper>
       </body>
