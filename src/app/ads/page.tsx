@@ -49,16 +49,13 @@ export default async function AdsPage({ searchParams }: AdsPageProps) {
   const resolvedSearchParams = await searchParams;
 
   return (
-    <main
-      className="min-h-screen bg-gray-50 overflow-x-hidden"
-      dir="rtl"
-    >
+    <main className="min-h-screen bg-gray-50 overflow-x-hidden" dir="rtl">
       <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-6">
         {/* تیتر صفحه */}
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-bold text-slate-800">آگهی‌ها</h1>
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="mt-1 text-sm text-slate-500">
               انواع آگهی‌های مرتبط با صنعت چاپ و مشاغل وابسته
             </p>
           </div>
@@ -150,16 +147,24 @@ async function AdsList({
     !!category ||
     hasImage === "1";
 
+  const isCategoryFilter = !!category;
+
+  // متن وضعیت بالای لیست
+  const headerText =
+    ads.length === 0
+      ? isCategoryFilter
+        ? "هیچ آگهی فعالی در این دسته ثبت نشده است."
+        : hasFilters
+        ? "نتیجه‌ای برای فیلترهای فعلی پیدا نشد."
+        : "هیچ آگهی فعالی ثبت نشده است."
+      : `${ads.length} آگهی فعال`;
+
   return (
     <>
       <div className="mb-3 flex items-center justify-between text-[13px] text-gray-600 lg:text-[14px]">
         <div>
-          <span className="font-medium text-gray-800">
-            {ads.length === 0
-              ? "هیچ آگهی فعالی ثبت نشده است."
-              : `${ads.length} آگهی فعال`}
-          </span>
-          {hasFilters && (
+          <span className="font-medium text-gray-800">{headerText}</span>
+          {hasFilters && ads.length > 0 && (
             <span className="mr-2 text-[11px] text-gray-500">
               (با فیلترهای انتخاب شده)
             </span>
@@ -169,10 +174,18 @@ async function AdsList({
 
       {ads.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-gray-50 px-4 py-10 text-center text-sm text-gray-600">
-          <p>نتیجه‌ای برای فیلترهای فعلی پیدا نشد.</p>
-          <p className="mt-1 text-xs text-gray-500">
-            فیلترها را تغییر دهید یا کلمه جستجو را ساده‌تر کنید.
+          <p>
+            {isCategoryFilter
+              ? "در حال حاضر هیچ آگهی‌ای در این دسته ثبت نشده است."
+              : hasFilters
+              ? "نتیجه‌ای برای فیلترهای فعلی پیدا نشد."
+              : "هنوز هیچ آگهی فعالی در سیستم ثبت نشده است."}
           </p>
+          {hasFilters && (
+            <p className="mt-1 text-xs text-gray-500">
+              فیلترها را تغییر دهید یا کلمه جستجو را ساده‌تر کنید.
+            </p>
+          )}
         </div>
       ) : (
         <>

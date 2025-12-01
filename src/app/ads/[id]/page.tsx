@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useParams } from 'next/navigation';
-import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useParams } from "next/navigation";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 
-import { buildPublicImageSrc } from '@/lib/imageFiles';
-import { showError, showSuccess } from '@/lib/toast';
-import { AdLocationMap } from '@/components/ad/AdLocationMap';
-import { AD_GROUP_LABELS, type AdGroup } from '@/config/adCategories';
+import { buildPublicImageSrc } from "@/lib/imageFiles";
+import { showError, showSuccess } from "@/lib/toast";
+import { AdLocationMap } from "@/components/ad/AdLocationMap";
+import { AD_GROUP_LABELS, type AdGroup } from "@/config/adCategories";
 
 interface JobAd {
   id: string;
@@ -22,34 +22,39 @@ interface JobAd {
 }
 
 export default function AdDetailsPage() {
-  const { id } = useParams();
+  // ✅ تایپ‌شده، بدون any
+  const params = useParams<{ id: string }>();
+  const id = params?.id;
 
   const [ad, setAd] = useState<JobAd | null>(null);
   const [mainIndex, setMainIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!id) return;
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
 
     async function fetchAd() {
       try {
         setIsLoading(true);
 
         const res = await fetch(`/api/ads/${id}`, {
-          cache: 'no-store',
+          cache: "no-store",
         });
 
         if (!res.ok) {
-          showError('❌ آگهی پیدا نشد');
-          setIsLoading(false);
+          showError("❌ آگهی پیدا نشد");
+          setAd(null);
           return;
         }
 
         const data = (await res.json()) as JobAd;
         setAd(data);
       } catch (err) {
-        console.error('❌ خطا در دریافت آگهی:', err);
-        showError('❌ خطای غیرمنتظره در دریافت آگهی');
+        console.error("❌ خطا در دریافت آگهی:", err);
+        showError("❌ خطای غیرمنتظره در دریافت آگهی");
       } finally {
         setIsLoading(false);
       }
@@ -60,41 +65,41 @@ export default function AdDetailsPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 text-sm">در حال بارگذاری آگهی...</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-gray-500">در حال بارگذاری آگهی...</p>
       </div>
     );
   }
 
-  if (!ad) {
+  if (!id || !ad) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-gray-500 text-sm">آگهی مورد نظر یافت نشد.</p>
+      <div className="flex min-h-screen items-center justify-center">
+        <p className="text-sm text-gray-500">آگهی مورد نظر یافت نشد.</p>
       </div>
     );
   }
 
   const images =
-    ad.images && ad.images.length > 0 ? ad.images : ['/placeholder.png'];
+    ad.images && ad.images.length > 0 ? ad.images : ["/placeholder.png"];
   const mainImageSrc = buildPublicImageSrc(images[mainIndex]);
 
   const handleThumbClick = (index: number) => {
     setMainIndex(index);
   };
 
-  const createdAtFa = new Date(ad.createdAt).toLocaleDateString('fa-IR');
+  const createdAtFa = new Date(ad.createdAt).toLocaleDateString("fa-IR");
 
   // برچسب گروه اصلی برای نمایش در breadcrumb و هدر
   const groupLabel =
     ad.group && AD_GROUP_LABELS[ad.group as AdGroup]
       ? AD_GROUP_LABELS[ad.group as AdGroup]
-      : 'آگهی‌ها';
+      : "آگهی‌ها";
 
   return (
     <main className="min-h-screen bg-gray-50" dir="rtl">
-      <div className="max-w-6xl mx-auto px-4 md:px-8 py-10">
+      <div className="mx-auto max-w-6xl px-4 py-10 md:px-8">
         {/* بالای صفحه: مسیر ناوبری شبیه دیوار */}
-        <div className="mb-3 text-xs text-gray-500 flex flex-wrap gap-1">
+        <div className="mb-3 flex flex-wrap gap-1 text-xs text-gray-500">
           <span>ایچاپ</span>
           <span> / </span>
           <span>{groupLabel}</span>
@@ -104,24 +109,24 @@ export default function AdDetailsPage() {
 
         {/* تیتر اصلی آگهی شبیه دیوار */}
         <header className="mb-6">
-          <h1 className="text-lg md:text-2xl font-bold text-gray-900">
+          <h1 className="text-lg font-bold text-gray-900 md:text-2xl">
             {ad.title}
           </h1>
           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-gray-500">
             <span>{groupLabel}</span>
-            <span className="w-1 h-1 rounded-full bg-gray-300" />
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
             <span>{ad.category}</span>
-            <span className="w-1 h-1 rounded-full bg-gray-300" />
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
             <span>تاریخ ثبت: {createdAtFa}</span>
           </div>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)] gap-8">
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.3fr)]">
           {/* ستون چپ: گالری + توضیحات + نقشه */}
           <div className="space-y-6">
             {/* گالری اصلی */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
-              <div className="relative w-full aspect-[4/3] md:aspect-[16/10] overflow-hidden rounded-xl bg-gray-100">
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-6">
+              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-gray-100 md:aspect-[16/10]">
                 <Image
                   src={mainImageSrc}
                   alt={ad.title}
@@ -142,10 +147,10 @@ export default function AdDetailsPage() {
                       key={index}
                       type="button"
                       onClick={() => handleThumbClick(index)}
-                      className={`relative w-20 h-16 flex-shrink-0 overflow-hidden rounded-md border ${
+                      className={`relative h-16 w-20 flex-shrink-0 overflow-hidden rounded-md border ${
                         isActive
-                          ? 'border-blue-600 ring-1 ring-blue-300'
-                          : 'border-gray-200'
+                          ? "border-blue-600 ring-1 ring-blue-300"
+                          : "border-gray-200"
                       }`}
                     >
                       <Image
@@ -162,16 +167,16 @@ export default function AdDetailsPage() {
             </section>
 
             {/* توضیحات */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
-              <h2 className="text-lg font-semibold mb-3">توضیحات</h2>
-              <p className="text-sm leading-7 text-gray-700 whitespace-pre-line">
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-6">
+              <h2 className="mb-3 text-lg font-semibold">توضیحات</h2>
+              <p className="whitespace-pre-line text-sm leading-7 text-gray-700">
                 {ad.description}
               </p>
             </section>
 
-            {/* نقشه – تهران/بهارستان (فعلاً ثابت) */}
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6">
-              <h2 className="text-lg font-semibold mb-3">موقعیت مکانی</h2>
+            {/* نقشه – فعلاً ثابت */}
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:p-6">
+              <h2 className="mb-3 text-lg font-semibold">موقعیت مکانی</h2>
               <AdLocationMap
                 title="موقعیت تقریبی آگهی روی نقشه"
                 height={260}
@@ -181,19 +186,19 @@ export default function AdDetailsPage() {
 
           {/* ستون راست: اطلاعات اصلی + دکمه‌ها */}
           <aside className="space-y-4">
-            <section className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:px-6 md:py-6">
-              <div className="flex items-start justify-between gap-3 mb-4">
+            <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm md:px-6 md:py-6">
+              <div className="mb-4 flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-sm font-semibold mb-1">
+                  <h2 className="mb-1 text-sm font-semibold">
                     جزئیات آگهی
                   </h2>
                   <p className="text-xs text-gray-500">
-                    دسته‌بندی:{' '}
+                    دسته‌بندی:{" "}
                     <span className="font-medium text-gray-700">
                       {ad.category}
                     </span>
                   </p>
-                  <p className="text-[11px] text-gray-400 mt-1">
+                  <p className="mt-1 text-[11px] text-gray-400">
                     گروه اصلی: {groupLabel}
                   </p>
                 </div>
@@ -201,7 +206,7 @@ export default function AdDetailsPage() {
                 {/* آیکون نشان کردن (فعلاً فقط UI) */}
                 <button
                   type="button"
-                  className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-gray-200 hover:bg-gray-50 text-gray-500"
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 text-gray-500 hover:bg-gray-50"
                   aria-label="نشان کردن آگهی"
                 >
                   <span className="text-sm">★</span>
@@ -211,7 +216,7 @@ export default function AdDetailsPage() {
               <div className="space-y-2 text-sm text-gray-700">
                 <div className="flex justify-between">
                   <span className="text-gray-500">وضعیت آگهی</span>
-                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 text-green-700 px-2 py-0.5 text-xs">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs text-green-700">
                     منتشر شده
                   </span>
                 </div>
@@ -225,7 +230,7 @@ export default function AdDetailsPage() {
               <div className="mt-6 flex flex-col gap-3">
                 <button
                   type="button"
-                  className="w-full rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm py-2.5 font-medium transition"
+                  className="w-full rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white transition hover:bg-red-700"
                   onClick={() =>
                     navigator.clipboard
                       .writeText(ad.phone)
@@ -233,7 +238,7 @@ export default function AdDetailsPage() {
                         showSuccess(`شماره ${ad.phone} کپی شد`)
                       )
                       .catch(() =>
-                        showError('خطا در کپی شماره')
+                        showError("خطا در کپی شماره")
                       )
                   }
                 >
@@ -241,7 +246,7 @@ export default function AdDetailsPage() {
                 </button>
                 <button
                   type="button"
-                  className="w-full rounded-xl border border-gray-300 text-gray-700 text-sm py-2.5 font-medium hover:bg-gray-50 transition"
+                  className="w-full rounded-xl border border-gray-300 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
                 >
                   چت (به‌زودی)
                 </button>
@@ -249,7 +254,7 @@ export default function AdDetailsPage() {
             </section>
 
             {/* باکس هشدار */}
-            <section className="bg-yellow-50 border border-yellow-100 rounded-2xl p-4 text-xs text-yellow-900 leading-6">
+            <section className="rounded-2xl border border-yellow-100 bg-yellow-50 p-4 text-xs leading-6 text-yellow-900">
               برخی هشدارها یا نکات اعتمادسازی و قوانین ایچاپ بعداً اینجا نمایش داده می‌شود؛
               مشابه «خطر‌های قبل از معامله» در دیوار.
             </section>

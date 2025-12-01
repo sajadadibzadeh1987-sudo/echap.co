@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import Image from 'next/image';
-import { FC, useState } from 'react';
-import { buildPublicImageSrc } from '@/lib/imageFiles';
+import Link from "next/link";
+import Image from "next/image";
+import { FC, useState } from "react";
+import { buildPublicImageSrc } from "@/lib/imageFiles";
 
 interface Ad {
   id: string;
@@ -12,10 +12,10 @@ interface Ad {
   category: string;
   createdAt: string;
   postedAt: string;
-  link: string;
+  link: string; // هنوز نگه می‌داریم، ولی برای لینک اصلی از id استفاده می‌کنیم
   images?: string[];
   phone?: string | null;
-  status?: 'PUBLISHED' | 'PENDING' | 'REJECTED' | string;
+  status?: "PUBLISHED" | "PENDING" | "REJECTED" | string;
 }
 
 interface AdCardProps {
@@ -26,26 +26,22 @@ interface AdCardProps {
 }
 
 // 🧠 از آدرس نرمال‌شده، آدرس نمایشی تصویر را می‌سازیم
-// ⚠️ فعلاً از خود تصویر اصلی استفاده می‌کنیم، نه /thumbs/
-// تا وقتی سیستم ساخت thumbnail کاملاً روی سرور فعال شود.
 function buildThumbSrc(raw: string): string {
-  if (!raw || raw === '/placeholder.png') return '/placeholder.png';
+  if (!raw || raw === "/placeholder.png") return "/placeholder.png";
 
   const publicSrc = buildPublicImageSrc(raw);
 
-  // اگر لینک خارجی است همون را برگردان
-  if (publicSrc.startsWith('http://') || publicSrc.startsWith('https://')) {
+  // اگر لینک خارجی است همان را برگردان
+  if (publicSrc.startsWith("http://") || publicSrc.startsWith("https://")) {
     return publicSrc;
   }
 
   // اگر از قبل thumb است
-  if (publicSrc.startsWith('/uploads/thumbs/')) {
+  if (publicSrc.startsWith("/uploads/thumbs/")) {
     return publicSrc;
   }
 
-  // 👇 فعلاً: همان تصویر اصلی را استفاده کن
-  // (در آینده، وقتی thumbnailها واقعاً روی سرور تولید شدند،
-  // می‌توانیم اینجا را به /uploads/thumbs/ برگردانیم.)
+  // فعلاً همان تصویر اصلی
   return publicSrc;
 }
 
@@ -53,7 +49,12 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
   const [bookmarked, setBookmarked] = useState(false);
 
   const hasImages = ad.images && ad.images.length > 0;
-  const mainImage = hasImages ? buildThumbSrc(ad.images![0]!) : '/placeholder.png';
+  const mainImage = hasImages
+    ? buildThumbSrc(ad.images![0]!)
+    : "/placeholder.png";
+
+  // ✅ لینک مطمئن برای صفحه تکی آگهی
+  const detailHref = `/ads/${ad.id}`;
 
   return (
     <article
@@ -70,7 +71,7 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
       <button
         type="button"
         onClick={(e) => {
-          e.stopPropagation();
+          e.stopPropagation(); // جلوگیری از کلیک روی کارت
           setBookmarked((b) => !b);
         }}
         className="
@@ -88,7 +89,7 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
           width="16"
           height="16"
           viewBox="0 0 24 24"
-          fill={bookmarked ? 'currentColor' : 'none'}
+          fill={bookmarked ? "currentColor" : "none"}
           stroke="currentColor"
           strokeWidth="1.6"
         >
@@ -97,7 +98,11 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
       </button>
 
       {/* کل کارت لینک به صفحه تک‌آگهی */}
-      <Link href={ad.link} className="flex flex-col md:flex-row gap-3 p-3 md:p-4">
+      <Link
+        href={detailHref}
+        className="flex flex-col gap-3 p-3 md:flex-row md:p-4"
+        prefetch={false}
+      >
         {/* تصویر thumbnail / اصلی */}
         <div
           className="
@@ -110,44 +115,45 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
         >
           <Image
             src={mainImage}
-            alt={ad.title || ''}
+            alt={ad.title || ""}
             fill
             sizes="(min-width: 768px) 10rem, 100vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-200"
+            className="object-cover transition-transform duration-200 group-hover:scale-105"
           />
         </div>
 
         {/* متن آگهی */}
-        <div className="flex-1 flex flex-col justify-between gap-2 text-right">
+        <div className="flex flex-1 flex-col justify-between gap-2 text-right">
           <div>
             {ad.status && (
               <span
                 className="
-                  inline-flex items-center px-2 py-0.5
-                  rounded-full text-[10px] font-medium
-                  bg-gray-100 text-gray-600
-                  mb-1
+                  mb-1 inline-flex items-center
+                  rounded-full bg-gray-100
+                  px-2 py-0.5 text-[10px] font-medium text-gray-600
                 "
               >
-                {ad.status === 'PENDING'
-                  ? 'در انتظار تأیید'
-                  : ad.status === 'REJECTED'
-                  ? 'رد شده'
-                  : 'منتشر شده'}
+                {ad.status === "PENDING"
+                  ? "در انتظار تأیید"
+                  : ad.status === "REJECTED"
+                  ? "رد شده"
+                  : "منتشر شده"}
               </span>
             )}
 
-            <h3 className="text-sm md:text-base font-semibold text-gray-900 line-clamp-1">
+            <h3 className="line-clamp-1 text-sm font-semibold text-gray-900 md:text-base">
               {ad.title}
             </h3>
 
-            <p className="mt-1 text-xs md:text-sm text-gray-600 line-clamp-2">
+            <p className="mt-1 line-clamp-2 text-xs text-gray-600 md:text-sm">
               {ad.description}
             </p>
           </div>
 
-          <div className="flex items-center justify-between mt-1 text-[11px] text-gray-500">
-            <span className="truncate max-w-[55%]">دسته: {ad.category}</span>
+          <div className="mt-1 flex items-center justify-between text-[11px] text-gray-500">
+            <span className="max-w-[55%] truncate">
+              دسته: {ad.category}
+            </span>
             <span>{ad.postedAt}</span>
           </div>
         </div>
@@ -159,8 +165,7 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
           className="
             flex items-center justify-end gap-2
             border-t border-gray-100
-            px-3 py-2
-            bg-gray-50
+            bg-gray-50 px-3 py-2
           "
         >
           {onEdit && (
@@ -169,11 +174,10 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
               onClick={() => onEdit(ad)}
               title="ویرایش متن آگهی"
               className="
-                w-8 h-8 flex items-center justify-center
+                flex h-8 w-8 items-center justify-center
                 rounded-lg border border-gray-200
                 bg-white text-gray-700
-                hover:bg-gray-100 hover:border-gray-300
-                transition
+                transition hover:border-gray-300 hover:bg-gray-100
               "
             >
               <svg
@@ -196,11 +200,10 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
               onClick={() => onImages(ad)}
               title="مدیریت تصاویر"
               className="
-                w-8 h-8 flex items-center justify-center
+                flex h-8 w-8 items-center justify-center
                 rounded-lg border border-gray-200
                 bg-white text-gray-700
-                hover:bg-gray-100 hover:border-gray-300
-                transition
+                transition hover:border-gray-300 hover:bg-gray-100
               "
             >
               <svg
@@ -223,11 +226,10 @@ const AdCard: FC<AdCardProps> = ({ ad, onEdit, onImages, onDelete }) => {
               onClick={() => onDelete(ad.id)}
               title="حذف آگهی"
               className="
-                w-8 h-8 flex items-center justify-center
+                flex h-8 w-8 items-center justify-center
                 rounded-lg border border-red-200
                 bg-red-50 text-red-600
-                hover:bg-red-100 hover:border-red-300
-                transition
+                transition hover:border-red-300 hover:bg-red-100
               "
             >
               <svg
