@@ -11,7 +11,8 @@ model User {
   id              String    @id @default(cuid())
   phone           String    @unique
   password        String?
-  role            String    @default("user")
+  // ✅ نقش کاربر حالا enum است، نه رشته‌ی آزاد
+  role            UserRole  @default(USER)
   hasSelectedRole Boolean   @default(false)
   firstName       String?
   lastName        String?
@@ -23,6 +24,10 @@ model User {
   otpExpiry       DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+
+  // ⭐ سیستم سکه‌ها
+  coins       Int       @default(0) // تعداد سکه‌های کاربر
+  lastCheckIn DateTime?            // آخرین باری که سکه روزانه گرفته
 
   jobAds           JobAd[]
   businessProfile  BusinessProfile?
@@ -46,8 +51,20 @@ model JobAd {
   group        String?   // گروه اصلی: JOB / FREELANCER / PRINT_SERVICE / MACHINE / MATERIAL / OTHER
   categorySlug String?   // اسلاگ دسته: مثلا "job-operator-offset"
 
+  // مالک آگهی
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
+
+  // ✅ اطلاعات بررسی / تأیید / رد توسط مدیر ارشد
+  moderatedById  String?   // id مدیر ارشد
+  moderatedAt    DateTime? // زمان آخرین بررسی
+  moderationNote String?   // توضیح ادمین برای تأیید/رد (مثلا دلیل رد شدن)
+
+  // ✅ سافت‌دیلیت آگهی + دلیل حذف
+  isDeleted    Boolean  @default(false) // اگر true باشد یعنی آگهی برای عموم نمایش داده نمی‌شود
+  deletedById  String?               // id حذف‌کننده (مثلا سوپر ادمین)
+  deletedAt    DateTime?
+  deleteReason String?               // دلیل حذف آگهی توسط مدیر
 }
 
 model BusinessProfile {
@@ -104,4 +121,13 @@ enum JobAdStatus {
   PENDING
   PUBLISHED
   REJECTED
+}
+
+// ✅ نقش‌ها (شامل مدیر ارشد)
+enum UserRole {
+  USER        // کاربر عادی
+  FREELANCER  // فریلنسر
+  SUPPLIER    // تأمین‌کننده
+  PRINTSHOP   // چاپخانه
+  SUPER_ADMIN // مدیر ارشد
 }

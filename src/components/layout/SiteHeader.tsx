@@ -1,4 +1,4 @@
-// src/components/header/SiteHeader.tsx
+// src/components/layout/SiteHeader.tsx
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -176,10 +176,12 @@ const megaMenuItems: MegaMenuItem[] = [
   },
 ];
 
-// شهرها (مشابه CITIES در AdsMobileFilters)
+// شهرها
 const CITY_OPTIONS = ["تهران", "کرج", "اصفهان", "شیراز", "تبریز", "مشهد"];
 
 export default function SiteHeader() {
+  // همه هوک‌ها این بالا
+  const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
   const [isHoveringPanel, setIsHoveringPanel] = useState(false);
@@ -196,10 +198,55 @@ export default function SiteHeader() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const { data: session } = useSession();
-  const isAuthenticated = !!session?.user;
+  // ✅ فقط status لازم داریم
+  const { status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   const { openModal } = useModalStore() as unknown as AuthModalStore;
+
+  // فقط روی کلاینت
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // اسکرول
+  useEffect(() => {
+    if (!mounted) return;
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [mounted]);
+
+  // جستجو → /ads?q=...
+  useEffect(() => {
+    if (!mounted) return;
+
+    const timeout = setTimeout(() => {
+      const trimmed = searchTerm.trim();
+      const params = new URLSearchParams(searchParams?.toString());
+
+      if (!trimmed) {
+        if (pathname === "/ads") {
+          params.delete("q");
+          const qs = params.toString();
+          router.push(qs ? `/ads?${qs}` : "/ads");
+        }
+        return;
+      }
+
+      params.set("q", trimmed);
+      router.push(`/ads?${params.toString()}`);
+    }, 500);
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm, pathname, router, searchParams, mounted]);
+
+  // قبل از mount هیچی رندر نکن
+  if (!mounted) {
+    return null;
+  }
 
   const handleAuthClick = () => {
     openModal("auth");
@@ -210,7 +257,6 @@ export default function SiteHeader() {
     router.push("/");
   };
 
-  // انتخاب شهر → ست شدن روی /ads?city=...
   const handleCitySelect = (selected: string) => {
     setCity(selected);
     setIsCityMenuOpen(false);
@@ -220,41 +266,6 @@ export default function SiteHeader() {
 
     router.push(`/ads?${params.toString()}`);
   };
-
-  // اسکرول شفاف/سایه هدر
-  useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
-
-  // جستجوی خودکار → /ads?q=...
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      const trimmed = searchTerm.trim();
-      const params = new URLSearchParams(searchParams?.toString());
-
-      // اگر کاربر چیزی ننوشته
-      if (!trimmed) {
-        // فقط وقتی خودِ صفحه لیست آگهی‌ها هستیم q را پاک و رفرش کن
-        if (pathname === "/ads") {
-          params.delete("q");
-          const qs = params.toString();
-          router.push(qs ? `/ads?${qs}` : "/ads");
-        }
-        // روی صفحات دیگر (مثل /ads/[id]) هیچ کاری نکن
-        return;
-      }
-
-      // اگر متن جستجو داریم، همیشه برو به صفحه لیست آگهی‌ها با q
-      params.set("q", trimmed);
-      router.push(`/ads?${params.toString()}`);
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [searchTerm, pathname, router, searchParams]);
 
   const clearHoverTimeout = () => {
     if (hoverTimeout.current) {
@@ -279,7 +290,7 @@ export default function SiteHeader() {
 
   const activeItem = megaMenuItems.find((item) => item.id === activeMenuId);
 
-  // کامپوننت کوچک انتخاب شهر (در دسکتاپ و موبایل استفاده می‌شود)
+  // انتخاب شهر
   const CitySelector = ({ compact = false }: { compact?: boolean }) => (
     <div className="relative">
       <button
@@ -332,9 +343,9 @@ export default function SiteHeader() {
       dir="rtl"
     >
       <div className="mx-auto max-w-7xl px-4">
-        {/* هدر دسکتاپ (مگا منو) */}
+        {/* هدر دسکتاپ */}
         <div className="hidden md:flex h-16 items-center justify-between gap-6">
-          {/* لوگو / برند */}
+          {/* لوگو */}
           <div className="flex items-center gap-2">
             <Link
               href="/"
@@ -355,12 +366,12 @@ export default function SiteHeader() {
             </Link>
           </div>
 
-          {/* منوی وسط (مگا منو) */}
+          {/* منوی وسط */}
           <nav className="flex-1 flex items-center justify-center">
             <ul className="flex items-center gap-6 text-sm font-medium text-gray-800">
               {megaMenuItems.map((item) => {
                 const isActive =
-                  pathname.startsWith(item.href || "") ||
+                  (item.href && pathname.startsWith(item.href)) ||
                   activeMenuId === item.id;
                 return (
                   <li key={item.id} className="relative">
@@ -392,7 +403,7 @@ export default function SiteHeader() {
             </ul>
           </nav>
 
-          {/* سمت چپ: خانه، جستجو، خروج، ورود/پروفایل */}
+          {/* سمت چپ */}
           <div className="flex items-center gap-3">
             {/* خانه */}
             <button
@@ -404,7 +415,7 @@ export default function SiteHeader() {
               <Home className="w-4 h-4 text-gray-700" />
             </button>
 
-            {/* جستجو دسکتاپ (باز/بسته شدن کادر) */}
+            {/* جستجو */}
             <button
               type="button"
               onClick={() => setShowDesktopSearch((prev) => !prev)}
@@ -414,7 +425,7 @@ export default function SiteHeader() {
               <Search className="w-4 h-4 text-gray-700" />
             </button>
 
-            {/* خروج در صورت لاگین بودن */}
+            {/* خروج */}
             {isAuthenticated && (
               <button
                 type="button"
@@ -426,7 +437,7 @@ export default function SiteHeader() {
               </button>
             )}
 
-            {/* ورود / ثبت‌نام یا پروفایل من */}
+            {/* ورود / پروفایل */}
             {isAuthenticated ? (
               <button
                 type="button"
@@ -449,14 +460,11 @@ export default function SiteHeader() {
           </div>
         </div>
 
-        {/* کادر جستجوی دسکتاپ (زیر هدر، وقتی آیکون جستجو فعال است) */}
+        {/* سرچ دسکتاپ زیر هدر */}
         {showDesktopSearch && (
           <div className="hidden md:flex items-center justify-end pb-3">
             <div className="w-full max-w-xl flex gap-2">
-              {/* انتخاب شهر */}
               <CitySelector />
-
-              {/* سرچ با هوشمند سازی q روی /ads */}
               <div className="flex items-center gap-2 flex-1 rounded-full bg-gray-100 px-3 py-2 shadow-sm">
                 <Search className="w-4 h-4 text-gray-400" />
                 <input
@@ -471,7 +479,7 @@ export default function SiteHeader() {
           </div>
         )}
 
-        {/* نوار جستجو و انتخاب شهر موبایل (بدون آیکون فیلتر، تمام عرض) */}
+        {/* سرچ موبایل */}
         <div
           className={`
             flex md:hidden items-center
@@ -483,10 +491,7 @@ export default function SiteHeader() {
           `}
         >
           <div className="flex w-full items-center gap-2">
-            {/* انتخاب شهر موبایل */}
             <CitySelector compact />
-
-            {/* سرچ موبایل تمام عرض باقی‌مانده */}
             <div
               className="
                 flex items-center gap-2
@@ -513,7 +518,7 @@ export default function SiteHeader() {
         </div>
       </div>
 
-      {/* پنل مگا منو (فقط دسکتاپ) */}
+      {/* پنل مگامنو */}
       <AnimatePresence>
         {activeItem && isHoveringPanel && (
           <motion.div

@@ -56,8 +56,10 @@ export const authOptions: AuthOptions = {
           user = await prisma.user.create({
             data: {
               phone,
-              role: "user",
+              // 🔁 اینجا قبلاً "user" بود؛ چون enum داریم باید "USER" باشه
+              role: "USER",
               hasSelectedRole: false,
+              // coins نیازی نیست اینجا ست بشه چون تو schema پیش‌فرض 0 هست
             },
           });
         }
@@ -78,6 +80,8 @@ export const authOptions: AuthOptions = {
           lastName: user.lastName ?? null,
           slug: user.slug ?? null,
           hasSelectedRole: user.hasSelectedRole,
+          // ⭐ اضافه کردن سکه‌ها به آبجکت کاربر برای JWT/Session
+          coins: user.coins ?? 0,
         };
       },
     }),
@@ -95,10 +99,18 @@ export const authOptions: AuthOptions = {
 
   callbacks: {
     async jwt({ token, user }) {
-      if (user) return { ...token, ...user };
+      // وقتی تازه لاگین شده، user از authorize میاد
+      if (user) {
+        return {
+          ...token,
+          ...user,
+        };
+      }
       return token;
     },
+
     async session({ session, token }) {
+      // کل token رو به عنوان user توی session می‌ریزیم (طبق تایپ خودت)
       session.user = token as unknown as Session["user"];
       return session;
     },

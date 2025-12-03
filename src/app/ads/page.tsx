@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 import AdCard from "@/components/AdCard";
 import AdsFilterSidebar from "@/components/ad/AdsFilterSidebar";
 import AdsMobileFilters from "@/components/ad/AdsMobileFilters";
-import { JobAd, JobAdStatus, Prisma } from "@prisma/client";
+import { JobAdStatus, Prisma } from "@prisma/client";
 
 type ListAd = {
   id: string;
@@ -105,13 +105,20 @@ async function AdsList({
 
   // ساخت where به صورت immutable و بدون any
   const where: Prisma.JobAdWhereInput = {
+    // فقط آگهی‌های منتشر شده و حذف‌نشده
     status: JobAdStatus.PUBLISHED,
+    isDeleted: false,
     ...(q && q.trim() !== ""
       ? {
           OR: [
             { title: { contains: q.trim(), mode: "insensitive" } },
             { description: { contains: q.trim(), mode: "insensitive" } },
           ],
+        }
+      : {}),
+    ...(group
+      ? {
+          group,
         }
       : {}),
     ...(category
@@ -128,7 +135,7 @@ async function AdsList({
       : {}),
   };
 
-  const rawAds: JobAd[] = await prisma.jobAd.findMany({
+  const rawAds = await prisma.jobAd.findMany({
     where,
     orderBy: { createdAt: "desc" },
     take: 40,
@@ -149,7 +156,7 @@ async function AdsList({
 
   const hasFilters =
     !!(q && q.trim() !== "") ||
-    !!group || // group فعلاً فقط در UI استفاده می‌شود، نه در فیلتر DB
+    !!group ||
     !!category ||
     hasImage === "1";
 

@@ -4,6 +4,12 @@
 │   │   ├── [id]/
 │   │   │   ├── page.tsx
 │   ├── api/
+│   │   ├── admin/
+│   │   │   ├── ads/
+│   │   │   │   ├── route.ts
+│   │   │   │   ├── [id]/
+│   │   │   │   │   ├── moderate/
+│   │   │   │   │   │   ├── route.ts
 │   │   ├── ads/
 │   │   │   ├── route.ts
 │   │   │   ├── [id]/
@@ -15,6 +21,9 @@
 │   │   │   │   ├── route.ts
 │   │   ├── business-profile/
 │   │   │   ├── route.ts
+│   │   ├── coins/
+│   │   │   ├── check-in/
+│   │   │   │   ├── route.ts
 │   │   ├── get-role/
 │   │   │   ├── route.ts
 │   │   ├── jobads/
@@ -43,6 +52,9 @@
 │   │   ├── upload-logo/
 │   │   │   ├── route.ts
 │   ├── dashboard/
+│   │   ├── admin/
+│   │   │   ├── ads/
+│   │   │   │   ├── page.tsx
 │   │   ├── business-profile/
 │   │   │   ├── page.tsx
 │   │   ├── ClientDashboardPage.tsx
@@ -61,6 +73,7 @@
 │   ├── favicon.ico
 │   ├── globals.css
 │   ├── layout.tsx
+│   ├── not-found.tsx
 │   ├── page.tsx
 │   ├── printer/
 │   │   ├── [slug]/
@@ -80,6 +93,7 @@
 │   │   ├── AdCategoryModal.tsx
 │   │   ├── AdLocationMap.tsx
 │   │   ├── AdsFilterSidebar.tsx
+│   │   ├── AdsMobileFilters.tsx
 │   ├── AdCard.tsx
 │   ├── AdPopup.tsx
 │   ├── auth/
@@ -93,6 +107,7 @@
 │   ├── common/
 │   │   ├── DialogWrapper.tsx
 │   ├── dashboard/
+│   │   ├── CoinsSummary.tsx
 │   │   ├── FreelancerDashboard.tsx
 │   │   ├── JobAdImagesEditor.tsx
 │   │   ├── JobAdImagesUploader.tsx
@@ -100,6 +115,7 @@
 │   │   ├── PrinterProfileForm.tsx
 │   │   ├── Sidebar.tsx
 │   │   ├── StatsCard.tsx
+│   │   ├── SuperAdminDashboard.tsx
 │   │   ├── SupplierDashboard.tsx
 │   │   ├── TopBar.tsx
 │   │   ├── UserCard.tsx
@@ -124,7 +140,6 @@
 │   ├── providers/
 │   │   ├── SessionWrapper.tsx
 │   ├── SiteFooter.tsx
-│   ├── SiteHeader.tsx
 │   ├── ui/
 │   │   ├── button.tsx
 │   │   ├── card.tsx

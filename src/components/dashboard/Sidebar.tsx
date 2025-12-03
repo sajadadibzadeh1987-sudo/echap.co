@@ -3,7 +3,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import ProfileEditModal from "@/components/profile/ProfileEditModal";
 
 interface MenuItem {
@@ -23,16 +23,20 @@ export default function Sidebar({ role, onClose }: Props) {
   const { data: session } = useSession();
   const [editOpen, setEditOpen] = useState(false);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await signOut({ redirect: false });
     } finally {
       router.push("/");
     }
-  };
+  }, [router]);
 
   const items: MenuItem[] = useMemo(() => {
     if (!session?.user) return [];
+
+    // ✅ نرمال‌سازی نقش برای مقایسه راحت
+    const normalizedRole = role?.toLowerCase?.() ?? "user";
+    // user, freelancer, supplier, printshop, super_admin, ...
 
     const base: MenuItem[] = [
       { label: "خانه", href: "/dashboard" },
@@ -40,25 +44,37 @@ export default function Sidebar({ role, onClose }: Props) {
       { label: "خروج", action: handleLogout },
     ];
 
-    if (role === "supplier") {
+    // ⭐ آیتم‌های مشترک برای اکثر نقش‌ها (کاربر عادی، فریلنسر، تأمین‌کننده، چاپخانه، مدیر ارشد)
+    if (
+      ["user", "freelancer", "supplier", "printshop", "admin", "super_admin"].includes(
+        normalizedRole,
+      )
+    ) {
+      base.unshift({ label: "آگهی‌های من", href: "/dashboard/jobads/my" });
+      base.unshift({ label: "➕ درج آگهی", href: "/dashboard/jobads/create" });
+      base.unshift({ label: "پروفایل من", action: () => setEditOpen(true) });
+    }
+
+    // ⭐ محصولات من (برای فریلنسر، تأمین‌کننده، چاپخانه و مدیر ارشد)
+    if (
+      ["freelancer", "supplier", "printshop", "super_admin"].includes(
+        normalizedRole,
+      )
+    ) {
+      base.unshift({ label: "محصولات من", href: "/dashboard/products" });
+    }
+
+    // ⭐ پروفایل کسب‌وکار (برای تأمین‌کننده و مدیر ارشد)
+    if (["supplier", "super_admin"].includes(normalizedRole)) {
       base.unshift({
         label: "👷‍♂️ پروفایل کسب‌وکار",
         href: "/dashboard/business-profile",
       });
     }
 
-    if (["freelancer", "supplier"].includes(role)) {
-      base.unshift({ label: "محصولات من", href: "/dashboard/products" });
-    }
-
-    if (["freelancer", "supplier", "user", "admin"].includes(role)) {
-      base.unshift({ label: "آگهی‌های من", href: "/dashboard/jobads/my" });
-      base.unshift({ label: "➕ درج آگهی", href: "/dashboard/jobads/create" });
-      base.unshift({ label: "پروفایل من", action: () => setEditOpen(true) });
-    }
-
+    // ⭐ پروفایل چاپخانه (برای نقش چاپخانه و مدیر ارشد)
     const slug = (session.user as { slug?: string }).slug;
-    if (role === "printer") {
+    if (["printshop", "printer", "super_admin"].includes(normalizedRole)) {
       base.unshift({
         label: "🛠 ایجاد / ویرایش پروفایل چاپخانه",
         href: "/dashboard/printer-profile",
@@ -72,8 +88,20 @@ export default function Sidebar({ role, onClose }: Props) {
       }
     }
 
+    // ⭐ منوی مدیریتی مخصوص مدیر ارشد
+    if (normalizedRole === "super_admin") {
+      base.unshift({
+        label: "مدیریت کاربران",
+        href: "/dashboard/admin/users",
+      });
+      base.unshift({
+        label: "مدیریت آگهی‌ها",
+        href: "/dashboard/admin/ads",
+      });
+    }
+
     return base;
-  }, [role, session?.user, router]);
+  }, [role, session?.user, router, handleLogout]);
 
   return (
     <aside

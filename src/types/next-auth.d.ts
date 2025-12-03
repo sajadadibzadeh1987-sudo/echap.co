@@ -1,3 +1,4 @@
+// src/types/next-auth.d.ts
 import { DefaultSession, DefaultUser } from "next-auth";
 
 declare module "next-auth" {
@@ -15,6 +16,8 @@ declare module "next-auth" {
       email?: string | null;
       slug?: string | null;
       hasSelectedRole: boolean;
+      // ⭐ تعداد سکه‌های کاربر در سشن
+      coins?: number;
     } & DefaultSession["user"];
   }
 
@@ -29,6 +32,8 @@ declare module "next-auth" {
     lastName?: string | null;
     slug?: string | null;
     hasSelectedRole: boolean;
+    // ⭐ تعداد سکه‌ها روی مدل User
+    coins?: number;
   }
 }
 
@@ -46,5 +51,7 @@ declare module "next-auth/jwt" {
     email?: string | null;
     slug?: string | null;
     hasSelectedRole: boolean;
+    // ⭐ تعداد سکه‌ها روی توکن
+    coins?: number;
   }
 }

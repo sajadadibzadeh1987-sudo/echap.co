@@ -7,6 +7,7 @@ export async function GET() {
     const ads = await prisma.jobAd.findMany({
       where: {
         status: "PUBLISHED",
+        isDeleted: false, // ⬅️ آگهی‌های حذف‌شده نمایش داده نشوند
       },
       orderBy: {
         createdAt: "desc",

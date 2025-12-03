@@ -5,9 +5,7 @@ import { Suspense } from "react";
 
 import "./globals.css";
 
-// 👇 مسیر درست هدر
 import SiteHeader from "@/components/layout/SiteHeader";
-
 import MobileBottomNav from "@/components/layout/MobileBottomNav";
 import SiteFooter from "@/components/SiteFooter";
 import { Toaster } from "react-hot-toast";
@@ -49,7 +47,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {/* 🔵 مانیتور تمام فعالیت‌ها */}
           <SessionActivityWatcher />
 
-          {/* 🔵 هدر داخل Suspense تا ارور useSearchParams برطرف شود */}
+          {/* 🔵 هدر داخل Suspense */}
           <Suspense fallback={null}>
             <SiteHeader />
           </Suspense>

@@ -1,11 +1,11 @@
+// src/components/layout/DashboardLayout.tsx
 "use client";
 
-import { useEffect, useState, ReactNode } from "react";
+import { useState, ReactNode } from "react";
 import Sidebar from "../dashboard/Sidebar";
 import TopBar from "../dashboard/TopBar";
-import { useSession } from "next-auth/react";
-import useModalStore from "@/hooks/use-modal-store";
 import RoleSelectModal from "@/components/auth/RoleSelectModal";
+import { useSession } from "next-auth/react";
 
 interface Props {
   children: ReactNode;
@@ -13,20 +13,12 @@ interface Props {
 }
 
 export default function DashboardLayout({ children, role }: Props) {
-  const { data: session } = useSession();
-  const { openModal } = useModalStore();
-  const [hasCheckedRole, setHasCheckedRole] = useState(false);
+  // فقط برای همگام بودن با session اگر لازم شد
+  useSession();
 
   // کنترل منوی موبایل
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSidebarClosing, setIsSidebarClosing] = useState(false);
-
-  useEffect(() => {
-    if (!hasCheckedRole && session?.user?.role === "user") {
-      openModal("selectRole");
-      setHasCheckedRole(true);
-    }
-  }, [session, hasCheckedRole, openModal]);
 
   // شروع باز کردن منو
   const handleOpenSidebar = () => {
@@ -58,7 +50,7 @@ export default function DashboardLayout({ children, role }: Props) {
 
   return (
     <div className="flex min-h-screen bg-gray-100 flex-row-reverse" dir="rtl">
-      {/* سایدبار در سمت راست - فقط دسکتاپ (عین قبل) */}
+      {/* سایدبار در سمت راست - فقط دسکتاپ */}
       <div className="order-2 hidden lg:block">
         <Sidebar role={role} />
       </div>
@@ -68,6 +60,7 @@ export default function DashboardLayout({ children, role }: Props) {
         <TopBar onToggleSidebar={handleToggleSidebar} />
 
         <main className="p-6 space-y-6">{children}</main>
+        {/* مودال انتخاب نقش هنوز هست، اما دیگه خودکار باز نمی‌شود */}
         <RoleSelectModal />
       </div>
 
@@ -91,7 +84,6 @@ export default function DashboardLayout({ children, role }: Props) {
               ${isSidebarClosing ? "animate-slide-out-rtl" : "animate-slide-in-rtl"}
             `}
           >
-            {/* اینجا Sidebar با دکمه ✕ خودش رندر می‌شود */}
             <Sidebar role={role} onClose={startCloseSidebar} />
           </div>
         </div>

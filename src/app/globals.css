@@ -36,3 +36,20 @@
 .animate-slide-out-rtl {
   animation: slide-out-rtl 0.25s ease-in forwards;
 }
+
+/* ============================= */
+/*   Glassmorphism Dialog Overlay */
+/* ============================= */
+
+/* بک‌دراپ شیشه‌ای (اسکریم) برای تمام Dialog های ShadCN */
+[data-slot="dialog-overlay"] {
+  background-color: rgba(15, 23, 42, 0.35); /* کمی تیره + شفاف (slate) */
+  backdrop-filter: blur(12px);
+}
+
+/* fallback برای مرورگرهایی که backdrop-filter ندارند */
+@supports not (backdrop-filter: blur(12px)) {
+  [data-slot="dialog-overlay"] {
+    background-color: rgba(15, 23, 42, 0.55);
+  }
+}
