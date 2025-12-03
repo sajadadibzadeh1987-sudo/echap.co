@@ -86,7 +86,7 @@ export async function POST(req: NextRequest) {
     const sharpModule = await import("sharp");
     const sharp = sharpModule.default;
 
-    // اگر اصلاً عکسی نیست → آگهی بدون تصویر ولی منتشر شده
+    // ✅ ۱) اگر اصلاً عکسی نیست → آگهی بدون تصویر، اما در حالت "در صف بررسی" (PENDING)
     if (limitedFiles.length === 0) {
       const jobAd = await prisma.jobAd.create({
         data: {
@@ -96,8 +96,7 @@ export async function POST(req: NextRequest) {
           phone,
           userId: session.user.id,
           images: [],
-          status: "PUBLISHED",
-          // 👇 مقادیر جدید
+          status: "PENDING", // ⬅️ قبلاً PUBLISHED بود
           group,
           categorySlug,
         },
@@ -106,7 +105,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(jobAd, { status: 201 });
     }
 
-    // 🧠 ذخیره و ساخت thumbnail برای همه تصاویر به صورت همزمان
+    // ✅ ۲) ذخیره و ساخت thumbnail برای همه تصاویر به صورت همزمان
     const imageUrls: string[] = await Promise.all(
       limitedFiles.map(async (file) => {
         const buffer = Buffer.from(await file.arrayBuffer());
@@ -156,7 +155,7 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // ۱) آگهی ابتدا در حالت "در صف انتشار" ساخته می‌شود
+    // ✅ ۳) آگهی ابتدا در حالت "در صف بررسی" ساخته می‌شود
     const baseAd = await prisma.jobAd.create({
       data: {
         title,
@@ -164,20 +163,20 @@ export async function POST(req: NextRequest) {
         category,
         phone,
         userId: session.user.id,
-        images: [],
-        status: "PENDING",
-        // 👇 مقادیر جدید
+        images: [], // بعداً پر می‌کنیم
+        status: "PENDING", // ⬅️ قبلاً PENDING بود و خوبه
         group,
         categorySlug,
       },
     });
 
-    // ۲) بعد از اطمینان از ذخیره‌ی تصاویر + thumbnail ها، آگهی منتشر می‌شود
+    // ✅ ۴) بعد از ذخیره‌ی تصاویر + thumbnail ها، فقط تصاویر را ست می‌کنیم
+    //    وضعیت همچنان PENDING می‌ماند تا سوپر ادمین در پنل آن را تأیید کند.
     const jobAd = await prisma.jobAd.update({
       where: { id: baseAd.id },
       data: {
         images: finalImageUrls,
-        status: "PUBLISHED",
+        // ⛔ قبلاً اینجا status: "PUBLISHED" بود → حذف شد
       },
     });
 
