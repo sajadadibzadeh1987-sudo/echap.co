@@ -1,3 +1,4 @@
+// src/components/.../LoginWithOtpForm.tsx
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -99,8 +100,8 @@ const LoginWithOtpForm: React.FC = () => {
       const res = await signIn("credentials", {
         redirect: false,
         phone: trimmedPhone,
-        // ⬅️ مهم: نام فیلد را 'code' گذاشتیم تا با authorize هماهنگ باشد
-        code: trimmedOtp,
+        // ⬅️ مهم: اینجا باید otp باشد، نه code
+        otp: trimmedOtp,
       });
 
       console.log("SIGNIN_RESULT", res);

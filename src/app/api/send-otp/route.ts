@@ -30,13 +30,11 @@ export async function POST(req: Request) {
     // صرفاً برای دیباگ
     console.log("📲 کد تایید برای", phone + ":", otpCode);
 
-    const now = new Date();
-
     // ۱) ذخیره / آپدیت OTP در دیتابیس
     await prisma.oTP.upsert({
       where: { phone },
-      update: { code: otpCode, createdAt: now },
-      create: { phone, code: otpCode, createdAt: now },
+      update: { code: otpCode, createdAt: new Date() },
+      create: { phone, code: otpCode, createdAt: new Date() },
     });
 
     // ۲) تلاش برای ارسال SMS
@@ -59,7 +57,7 @@ export async function POST(req: Request) {
       );
     }
 
-    return NextResponse.json({ success: true }, { status: 200 });
+    return NextResponse.json({ success: true });
   } catch (err: unknown) {
     console.error("SEND_OTP_ROUTE_ERROR", err);
 
