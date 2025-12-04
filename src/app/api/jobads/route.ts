@@ -33,11 +33,9 @@ export async function POST(req: NextRequest) {
     const phone = formData.get("phone") as string | null;
     const mainImageIndexRaw = formData.get("mainImageIndex") as string | null;
 
-    // 👇 جدید:
     const group = formData.get("group") as string | null;
     const categorySlug = formData.get("categorySlug") as string | null;
 
-    // ولیدیشن سمت سرور (حتی اگر فرانت چک کرده)
     if (!title || !description || !category || !phone) {
       return NextResponse.json(
         { error: "اطلاعات فرم ناقص است" },
@@ -45,7 +43,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // اگر دوست داری group هم اجباری باشه:
     if (!group || !categorySlug) {
       return NextResponse.json(
         { error: "دسته‌بندی آگهی به درستی ارسال نشده است" },
@@ -53,14 +50,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // گرفتن فایل‌ها
     const files = formData
       .getAll("images")
       .filter((f): f is File => f instanceof File);
 
     const limitedFiles = files.slice(0, MAX_FILES);
 
-    // اعتبارسنجی سریع همه فایل‌ها
     for (const file of limitedFiles) {
       if (!ALLOWED_TYPES.includes(file.type)) {
         return NextResponse.json(
@@ -86,7 +81,7 @@ export async function POST(req: NextRequest) {
     const sharpModule = await import("sharp");
     const sharp = sharpModule.default;
 
-    // ✅ ۱) اگر اصلاً عکسی نیست → آگهی بدون تصویر، اما در حالت "در صف بررسی" (PENDING)
+    // ۱) اگر اصلاً عکسی نیست
     if (limitedFiles.length === 0) {
       const jobAd = await prisma.jobAd.create({
         data: {
@@ -96,16 +91,26 @@ export async function POST(req: NextRequest) {
           phone,
           userId: session.user.id,
           images: [],
-          status: "PENDING", // ⬅️ قبلاً PUBLISHED بود
+          status: "PENDING",
           group,
           categorySlug,
+        },
+      });
+
+      // 💬 پیام روبات ایچاپ
+      await prisma.chatMessage.create({
+        data: {
+          userId: session.user.id,
+          sender: "SYSTEM",
+          text: `آگهی «${title}» با موفقیت ثبت شد و در صف بررسی قرار گرفت.`,
+          jobAdId: jobAd.id,
         },
       });
 
       return NextResponse.json(jobAd, { status: 201 });
     }
 
-    // ✅ ۲) ذخیره و ساخت thumbnail برای همه تصاویر به صورت همزمان
+    // ۲) ذخیره تصاویر
     const imageUrls: string[] = await Promise.all(
       limitedFiles.map(async (file) => {
         const buffer = Buffer.from(await file.arrayBuffer());
@@ -115,10 +120,8 @@ export async function POST(req: NextRequest) {
         const filepath = path.join(uploadDir, filename);
         const thumbPath = path.join(thumbDir, filename);
 
-        // نسخه اصلی
         await writeFile(filepath, buffer);
 
-        // thumbnail
         try {
           await sharp(buffer)
             .resize(400, 400, {
@@ -130,14 +133,12 @@ export async function POST(req: NextRequest) {
           console.warn("⚠️ ساخت thumbnail ناموفق بود:", err);
         }
 
-        // آدرس قابل دسترس در فرانت
         return `/uploads/${filename}`;
       })
     );
 
     let finalImageUrls = [...imageUrls];
 
-    // تنظیم تصویر اصلی بر اساس ایندکس
     const mainImageIndex = mainImageIndexRaw
       ? parseInt(mainImageIndexRaw, 10)
       : null;
@@ -155,7 +156,7 @@ export async function POST(req: NextRequest) {
       ];
     }
 
-    // ✅ ۳) آگهی ابتدا در حالت "در صف بررسی" ساخته می‌شود
+    // ۳) ساخت آگهی در حالت PENDING
     const baseAd = await prisma.jobAd.create({
       data: {
         title,
@@ -163,20 +164,28 @@ export async function POST(req: NextRequest) {
         category,
         phone,
         userId: session.user.id,
-        images: [], // بعداً پر می‌کنیم
-        status: "PENDING", // ⬅️ قبلاً PENDING بود و خوبه
+        images: [],
+        status: "PENDING",
         group,
         categorySlug,
       },
     });
 
-    // ✅ ۴) بعد از ذخیره‌ی تصاویر + thumbnail ها، فقط تصاویر را ست می‌کنیم
-    //    وضعیت همچنان PENDING می‌ماند تا سوپر ادمین در پنل آن را تأیید کند.
+    // ۴) آپدیت تصاویر
     const jobAd = await prisma.jobAd.update({
       where: { id: baseAd.id },
       data: {
         images: finalImageUrls,
-        // ⛔ قبلاً اینجا status: "PUBLISHED" بود → حذف شد
+      },
+    });
+
+    // 💬 پیام روبات
+    await prisma.chatMessage.create({
+      data: {
+        userId: session.user.id,
+        sender: "SYSTEM",
+        text: `آگهی «${title}» با موفقیت ثبت شد و در صف بررسی قرار گرفت.`,
+        jobAdId: jobAd.id,
       },
     });
 

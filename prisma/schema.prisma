@@ -11,7 +11,6 @@ model User {
   id              String    @id @default(cuid())
   phone           String    @unique
   password        String?
-  // ✅ نقش کاربر حالا enum است، نه رشته‌ی آزاد
   role            UserRole  @default(USER)
   hasSelectedRole Boolean   @default(false)
   firstName       String?
@@ -26,12 +25,18 @@ model User {
   updatedAt       DateTime  @updatedAt
 
   // ⭐ سیستم سکه‌ها
-  coins       Int       @default(0) // تعداد سکه‌های کاربر
-  lastCheckIn DateTime?            // آخرین باری که سکه روزانه گرفته
+  coins       Int       @default(0)
+  lastCheckIn DateTime?
 
   jobAds           JobAd[]
   businessProfile  BusinessProfile?
   printShopProfile PrintShopProfile?
+
+  // صندوق پیام / چت
+  chatMessages     ChatMessage[]
+
+  // (در صورت نیاز در آینده) نوتیفیکشن‌ها
+  notifications    Notification[]
 }
 
 model JobAd {
@@ -44,27 +49,28 @@ model JobAd {
   isFeatured  Boolean  @default(false)
   images      String[]
 
-  // وضعیت آگهی (صف انتشار، منتشر شده، رد شده)
   status JobAdStatus @default(PENDING)
 
-  // 👇 فیلدهای جدید برای دسته‌بندی استاندارد
-  group        String?   // گروه اصلی: JOB / FREELANCER / PRINT_SERVICE / MACHINE / MATERIAL / OTHER
-  categorySlug String?   // اسلاگ دسته: مثلا "job-operator-offset"
+  group        String?
+  categorySlug String?
 
-  // مالک آگهی
   userId String?
   user   User?   @relation(fields: [userId], references: [id])
 
-  // ✅ اطلاعات بررسی / تأیید / رد توسط مدیر ارشد
-  moderatedById  String?   // id مدیر ارشد
-  moderatedAt    DateTime? // زمان آخرین بررسی
-  moderationNote String?   // توضیح ادمین برای تأیید/رد (مثلا دلیل رد شدن)
+  moderatedById  String?
+  moderatedAt    DateTime?
+  moderationNote String?
 
-  // ✅ سافت‌دیلیت آگهی + دلیل حذف
-  isDeleted    Boolean  @default(false) // اگر true باشد یعنی آگهی برای عموم نمایش داده نمی‌شود
-  deletedById  String?               // id حذف‌کننده (مثلا سوپر ادمین)
+  isDeleted    Boolean  @default(false)
+  deletedById  String?
   deletedAt    DateTime?
-  deleteReason String?               // دلیل حذف آگهی توسط مدیر
+  deleteReason String?
+
+  // چت‌های مرتبط با این آگهی (پیام‌های روبات درباره‌ی این آگهی)
+  chatMessages  ChatMessage[]
+
+  // نوتیفیکشن‌ها (اگر خواستیم)
+  notifications Notification[]
 }
 
 model BusinessProfile {
@@ -123,11 +129,60 @@ enum JobAdStatus {
   REJECTED
 }
 
-// ✅ نقش‌ها (شامل مدیر ارشد)
 enum UserRole {
-  USER        // کاربر عادی
-  FREELANCER  // فریلنسر
-  SUPPLIER    // تأمین‌کننده
-  PRINTSHOP   // چاپخانه
-  SUPER_ADMIN // مدیر ارشد
+  USER
+  FREELANCER
+  SUPPLIER
+  PRINTSHOP
+  SUPER_ADMIN
+}
+
+// نوع فرستنده‌ی پیام در چت
+enum ChatSender {
+  USER    // خود کاربر
+  SYSTEM  // روبات ایچاپ
+  ADMIN   // مدیر / پشتیبانی
+}
+
+// 📥 مدل چت / صندوق پیام
+model ChatMessage {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sender    ChatSender
+  text      String
+  jobAdId   String?
+  jobAd     JobAd?      @relation(fields: [jobAdId], references: [id], onDelete: SetNull)
+  isRead    Boolean     @default(false)
+  createdAt DateTime    @default(now())
+  readAt    DateTime?
+}
+
+
+// (اختیاری – اگر نخواستی بعداً می‌تونیم حذف کنیم)
+enum NotificationType {
+  AD_CREATED
+  AD_PENDING
+  AD_APPROVED
+  AD_REJECTED
+  AD_DELETED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type      NotificationType
+  title     String
+  message   String
+
+  jobAdId   String?
+  jobAd     JobAd?           @relation(fields: [jobAdId], references: [id], onDelete: Cascade)
+
+  sender    String           @default("ایچاپ")
+
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
 }

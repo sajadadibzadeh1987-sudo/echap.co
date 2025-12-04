@@ -27,7 +27,7 @@ export async function POST(
     const action = body.action as "APPROVE" | "REJECT" | "DELETE";
     const note = (body.note as string | undefined) ?? null;
 
-    // ✅ بدون any
+    // استخراج id مدیر بدون any
     let adminId: string | undefined;
     if (
       session.user &&
@@ -44,6 +44,42 @@ export async function POST(
       );
     }
 
+    // آگهی را برای دسترسی به userId و title می‌گیریم
+    const ad = await prisma.jobAd.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        userId: true,
+      },
+    });
+
+    if (!ad || !ad.userId) {
+      return NextResponse.json(
+        { error: "آگهی موردنظر یافت نشد." },
+        { status: 404 }
+      );
+    }
+
+    /**
+     * 📩 کمک‌تابع برای ارسال پیام وضعیت به صاحب آگهی در چت
+     * توجه: چون مدل ChatMessage فیلد 'sender' اجباری دارد،
+     * اینجا آن را "SYSTEM" قرار می‌دهیم تا مشخص باشد پیام سیستمی است.
+     */
+    const sendStatusMessage = async (text: string) => {
+      try {
+        await prisma.chatMessage.create({
+          data: {
+            userId: ad.userId as string,
+            text,
+            sender: "SYSTEM", // 👈 مقدار ثابت برای پیام‌های سیستمی
+          },
+        });
+      } catch (e) {
+        console.error("❌ خطا در ثبت پیام وضعیت آگهی در چت:", e);
+      }
+    };
+
     if (action === "APPROVE") {
       await prisma.jobAd.update({
         where: { id },
@@ -58,6 +94,11 @@ export async function POST(
           deleteReason: null,
         },
       });
+
+      // ✅ پیام چتی برای صاحب آگهی
+      await sendStatusMessage(
+        `آگهی شما با عنوان «${ad.title}» پس از بررسی تأیید و منتشر شد.`
+      );
 
       return NextResponse.json(
         { message: "آگهی با موفقیت منتشر شد." },
@@ -76,6 +117,11 @@ export async function POST(
         },
       });
 
+      const reasonText = note ? ` دلیل رد: ${note}` : "";
+      await sendStatusMessage(
+        `آگهی شما با عنوان «${ad.title}» پس از بررسی رد شد.${reasonText}`
+      );
+
       return NextResponse.json(
         { message: "آگهی با موفقیت رد شد." },
         { status: 200 }
@@ -92,6 +138,13 @@ export async function POST(
           deleteReason: note ?? "حذف توسط مدیر سیستم",
         },
       });
+
+      const reasonText = note
+        ? ` دلیل حذف: ${note}`
+        : " آگهی توسط مدیر سیستم حذف شد.";
+      await sendStatusMessage(
+        `آگهی شما با عنوان «${ad.title}» حذف شد.${reasonText}`
+      );
 
       return NextResponse.json(
         { message: "آگهی با موفقیت حذف شد." },

@@ -21,7 +21,7 @@ const LoginWithOtpForm: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [timeLeft, setTimeLeft] = useState(0); // ثانیه
 
-  // تایمر شمارش معکوس
+  // ⏱ تایمر شمارش معکوس
   useEffect(() => {
     if (timeLeft <= 0) return;
     const timer = setInterval(() => {
@@ -38,11 +38,13 @@ const LoginWithOtpForm: React.FC = () => {
     return `${m}:${s}`;
   };
 
-  // ارسال کد
+  // ✅ ارسال کد
   const handleSendCode = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
 
-    if (!phone || phone.trim().length !== 11) {
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedPhone || trimmedPhone.length !== 11) {
       toast.error("شماره موبایل را صحیح وارد کنید");
       return;
     }
@@ -52,12 +54,12 @@ const LoginWithOtpForm: React.FC = () => {
       const res = await fetch("/api/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: trimmedPhone }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
+      if (!res.ok || !data?.success) {
         toast.error(data?.message || "ارسال کد تایید با خطا مواجه شد");
         return;
       }
@@ -74,11 +76,14 @@ const LoginWithOtpForm: React.FC = () => {
     }
   };
 
-  // تایید کد و ورود
+  // ✅ تایید کد و ورود
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!otp || otp.trim().length < 4) {
+    const trimmedOtp = otp.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedOtp || trimmedOtp.length < 4) {
       toast.error("کد تایید را وارد کنید");
       return;
     }
@@ -93,8 +98,9 @@ const LoginWithOtpForm: React.FC = () => {
 
       const res = await signIn("credentials", {
         redirect: false,
-        phone,
-        otp,
+        phone: trimmedPhone,
+        // ⬅️ مهم: نام فیلد را 'code' گذاشتیم تا با authorize هماهنگ باشد
+        code: trimmedOtp,
       });
 
       console.log("SIGNIN_RESULT", res);
@@ -102,11 +108,10 @@ const LoginWithOtpForm: React.FC = () => {
       if (res?.ok) {
         toast.success("ورود با موفقیت انجام شد");
 
-        // 🟢 بستن مودال
+        // 🟢 ۱) بستن مودال
         closeModal();
 
-        // هدایت به داشبورد
-        router.push("/dashboard");
+        // 🟢 ۲) رفرش صفحه فعلی (همان آگهی / همان مسیر)
         router.refresh();
       } else {
         toast.error(
@@ -124,7 +129,6 @@ const LoginWithOtpForm: React.FC = () => {
   // ارسال مجدد کد - فقط وقتی تایمر تمام شده باشد
   const handleResend = async () => {
     if (timeLeft > 0) {
-      // از نظر UI دکمه در این حالت disabled است، ولی برای اطمینان اینجا هم چک می‌کنیم
       return;
     }
     await handleSendCode();
@@ -188,7 +192,7 @@ const LoginWithOtpForm: React.FC = () => {
               variant="outline"
               className="flex-1"
               onClick={handleResend}
-              disabled={loading || timeLeft > 0} // ⬅️ فقط بعد از اتمام تایمر فعال می‌شود
+              disabled={loading || timeLeft > 0}
             >
               {timeLeft > 0 ? "ارسال مجدد غیرفعال" : "ارسال مجدد کد"}
             </Button>

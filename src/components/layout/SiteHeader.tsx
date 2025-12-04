@@ -12,6 +12,8 @@ import {
   Home,
   LogOut,
   MapPin,
+  MessageCircle,
+  PlusCircle,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import useModalStore from "@/hooks/use-modal-store";
@@ -34,7 +36,6 @@ interface MegaMenuItem {
   sections: MegaMenuSection[];
 }
 
-// نوع هوک مودال بر اساس ساختار فعلی پروژه
 interface AuthModalStore {
   isOpen: boolean;
   type: string | null;
@@ -176,11 +177,9 @@ const megaMenuItems: MegaMenuItem[] = [
   },
 ];
 
-// شهرها
 const CITY_OPTIONS = ["تهران", "کرج", "اصفهان", "شیراز", "تبریز", "مشهد"];
 
 export default function SiteHeader() {
-  // همه هوک‌ها این بالا
   const [mounted, setMounted] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
@@ -198,18 +197,15 @@ export default function SiteHeader() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ✅ فقط status لازم داریم
   const { status } = useSession();
   const isAuthenticated = status === "authenticated";
 
   const { openModal } = useModalStore() as unknown as AuthModalStore;
 
-  // فقط روی کلاینت
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // اسکرول
   useEffect(() => {
     if (!mounted) return;
     const handleScroll = () => {
@@ -219,7 +215,6 @@ export default function SiteHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [mounted]);
 
-  // جستجو → /ads?q=...
   useEffect(() => {
     if (!mounted) return;
 
@@ -243,7 +238,6 @@ export default function SiteHeader() {
     return () => clearTimeout(timeout);
   }, [searchTerm, pathname, router, searchParams, mounted]);
 
-  // قبل از mount هیچی رندر نکن
   if (!mounted) {
     return null;
   }
@@ -290,7 +284,6 @@ export default function SiteHeader() {
 
   const activeItem = megaMenuItems.find((item) => item.id === activeMenuId);
 
-  // انتخاب شهر
   const CitySelector = ({ compact = false }: { compact?: boolean }) => (
     <div className="relative">
       <button
@@ -331,6 +324,22 @@ export default function SiteHeader() {
       )}
     </div>
   );
+
+  const handleCreateAdClick = () => {
+    if (!isAuthenticated) {
+      openModal("auth");
+      return;
+    }
+    router.push("/dashboard/jobads/create");
+  };
+
+  const handleChatClick = () => {
+    if (!isAuthenticated) {
+      openModal("auth");
+      return;
+    }
+    router.push("/dashboard/chat");
+  };
 
   return (
     <header
@@ -403,7 +412,7 @@ export default function SiteHeader() {
             </ul>
           </nav>
 
-          {/* سمت چپ */}
+          {/* سمت چپ دسکتاپ: خانه + چت + درج آگهی + جستجو + خروج + پروفایل/ورود */}
           <div className="flex items-center gap-3">
             {/* خانه */}
             <button
@@ -413,6 +422,27 @@ export default function SiteHeader() {
               aria-label="صفحه اصلی"
             >
               <Home className="w-4 h-4 text-gray-700" />
+            </button>
+
+            {/* چت */}
+            <button
+              type="button"
+              onClick={handleChatClick}
+              className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 transition"
+              aria-label="چت با ایچاپ"
+            >
+              <MessageCircle className="w-4 h-4 text-gray-700" />
+            </button>
+
+            {/* درج آگهی */}
+            <button
+              type="button"
+              onClick={handleCreateAdClick}
+              className="flex items-center justify-center gap-1 px-3 h-9 rounded-full bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition"
+              aria-label="درج آگهی"
+            >
+              <PlusCircle className="w-4 h-4" />
+              <span>درج آگهی</span>
             </button>
 
             {/* جستجو */}
@@ -460,26 +490,7 @@ export default function SiteHeader() {
           </div>
         </div>
 
-        {/* سرچ دسکتاپ زیر هدر */}
-        {showDesktopSearch && (
-          <div className="hidden md:flex items-center justify-end pb-3">
-            <div className="w-full max-w-xl flex gap-2">
-              <CitySelector />
-              <div className="flex items-center gap-2 flex-1 rounded-full bg-gray-100 px-3 py-2 shadow-sm">
-                <Search className="w-4 h-4 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="جستجو در آگهی‌های ایچاپ..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* سرچ موبایل */}
+        {/* سرچ موبایل بالای صفحه */}
         <div
           className={`
             flex md:hidden items-center
@@ -516,6 +527,25 @@ export default function SiteHeader() {
             </div>
           </div>
         </div>
+
+        {/* سرچ دسکتاپ زیر هدر */}
+        {showDesktopSearch && (
+          <div className="hidden md:flex items-center justify-end pb-3">
+            <div className="w-full max-w-xl flex gap-2">
+              <CitySelector />
+              <div className="flex items-center gap-2 flex-1 rounded-full bg-gray-100 px-3 py-2 shadow-sm">
+                <Search className="w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="جستجو در آگهی‌های ایچاپ..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full bg-transparent border-none outline-none text-sm text-gray-800 placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* پنل مگامنو */}

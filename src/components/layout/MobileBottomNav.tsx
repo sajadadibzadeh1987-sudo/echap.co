@@ -1,6 +1,7 @@
 // src/components/layout/MobileBottomNav.tsx
 "use client";
 
+import type { ComponentType, SVGProps } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -8,10 +9,20 @@ import {
   User2,
   PlusCircle,
   Megaphone,
-  ListChecks,
+  MessageCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import useModalStore from "@/hooks/use-modal-store";
+
+type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
+
+interface NavItem {
+  key: string;
+  labelFa: string;
+  href: string;
+  icon: IconComponent;
+  requireAuth?: boolean;
+}
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
@@ -25,17 +36,56 @@ export default function MobileBottomNav() {
     return pathname.startsWith(href);
   };
 
-  const items = [
-    { key: "needs", labelFa: "فروشگاه", href: "/as", icon: ListChecks },
-    { key: "ads", labelFa: "آگهی‌ها", href: "/ads", icon: Megaphone },
-    { key: "home", labelFa: "خانه", href: "/", icon: Home },
+  const items: NavItem[] = [
+    // پروفایل
+    {
+      key: "profile",
+      labelFa: isLoggedIn ? "پروفایل" : "ورود",
+      href: "/dashboard",
+      icon: User2,
+      requireAuth: true,
+    },
+    // درج آگهی
     {
       key: "create",
       labelFa: "درج آگهی",
       href: "/dashboard/jobads/create",
       icon: PlusCircle,
+      requireAuth: true,
     },
-  ] as const;
+    // خانه
+    {
+      key: "home",
+      labelFa: "خانه",
+      href: "/",
+      icon: Home,
+    },
+    // آگهی‌ها
+    {
+      key: "ads",
+      labelFa: "آگهی‌ها",
+      href: "/ads",
+      icon: Megaphone,
+    },
+    // چت
+    {
+      key: "chat",
+      labelFa: "چت",
+      href: "/dashboard/chat",
+      icon: MessageCircle,
+      requireAuth: true,
+    },
+  ];
+
+  const handleProtectedClick = (href: string, requireAuth?: boolean) => {
+    if (requireAuth && !isLoggedIn) {
+      // پاپ‌آپ ورود با موبایل و OTP
+      openModal("auth");
+      return;
+    }
+    // ناوبری عادی
+    window.location.href = href;
+  };
 
   return (
     <nav
@@ -49,11 +99,42 @@ export default function MobileBottomNav() {
     >
       <div className="w-full">
         <div className="flex items-center justify-between h-16 w-full">
-          {/* ۴ آیتم اصلی */}
           {items.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
 
+            // نیاز به لاگین دارد
+            if (item.requireAuth) {
+              return (
+                <button
+                  key={item.key}
+                  type="button"
+                  onClick={() =>
+                    handleProtectedClick(item.href, item.requireAuth)
+                  }
+                  className="flex-1 h-full flex items-center justify-center"
+                >
+                  <div className="flex flex-col items-center gap-1">
+                    <Icon
+                      className={`w-[22px] h-[22px] ${
+                        active ? "text-red-500" : "text-gray-400"
+                      }`}
+                      strokeWidth={2}
+                    />
+                    <span
+                      className={`text-[11px] leading-none ${
+                        active ? "text-red-500" : "text-gray-500"
+                      }`}
+                      dir="rtl"
+                    >
+                      {item.labelFa}
+                    </span>
+                  </div>
+                </button>
+              );
+            }
+
+            // بدون نیاز به لاگین
             return (
               <Link
                 key={item.key}
@@ -79,51 +160,6 @@ export default function MobileBottomNav() {
               </Link>
             );
           })}
-
-          {/* پروفایل یا ورود */}
-          {isLoggedIn ? (
-            <Link
-              href="/dashboard"
-              className="flex-1 h-full flex items-center justify-center"
-            >
-              <div className="flex flex-col items-center gap-1">
-                <User2
-                  className={`w-[22px] h-[22px] ${
-                    isActive("/dashboard")
-                      ? "text-red-500"
-                      : "text-gray-400"
-                  }`}
-                  strokeWidth={2}
-                />
-                <span
-                  className={`text-[11px] leading-none ${
-                    isActive("/dashboard")
-                      ? "text-red-500"
-                      : "text-gray-500"
-                  }`}
-                  dir="rtl"
-                >
-                  پروفایل
-                </span>
-              </div>
-            </Link>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openModal("auth")}
-              className="flex-1 h-full flex items-center justify-center"
-            >
-              <div className="flex flex-col items-center gap-1">
-                <User2
-                  className="w-[22px] h-[22px] text-gray-400"
-                  strokeWidth={2}
-                />
-                <span className="text-[11px] leading-none text-gray-500" dir="rtl">
-                  ورود
-                </span>
-              </div>
-            </button>
-          )}
         </div>
       </div>
     </nav>
