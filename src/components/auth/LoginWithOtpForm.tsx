@@ -1,7 +1,11 @@
-// src/components/.../LoginWithOtpForm.tsx
+// src/components/auth/LoginWithOtpForm.tsx
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -11,6 +15,20 @@ import { Input } from "@/components/ui/input";
 import useModalStore from "@/hooks/use-modal-store";
 
 type Step = "phone" | "verify";
+
+// ✅ تایپ کمکی برای WebOTP
+type OTPCredential = {
+  code: string;
+};
+
+type NavigatorWithOTPCredential = Navigator & {
+  credentials: Navigator["credentials"] & {
+    get: (options: {
+      otp: { transport: string[] };
+      signal?: AbortSignal;
+    }) => Promise<OTPCredential | null>;
+  };
+};
 
 const LoginWithOtpForm: React.FC = () => {
   const router = useRouter();
@@ -77,55 +95,98 @@ const LoginWithOtpForm: React.FC = () => {
     }
   };
 
-  // ✅ تایید کد و ورود
-  const handleVerify = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // ✅ تایید کد و ورود (قابل فراخوانی از submit و از اتوماسیون)
+  const handleVerify = useCallback(
+    async (e?: React.FormEvent) => {
+      if (e) e.preventDefault();
 
-    const trimmedOtp = otp.trim();
-    const trimmedPhone = phone.trim();
+      const trimmedOtp = otp.trim();
+      const trimmedPhone = phone.trim();
 
-    if (!trimmedOtp || trimmedOtp.length < 4) {
-      toast.error("کد تایید را وارد کنید");
-      return;
-    }
+      if (loading) return; // جلوگیری از دابل کلیک / دابل کال
 
-    if (timeLeft <= 0) {
-      toast.error("کد منقضی شده است، دوباره ارسال کنید");
-      return;
-    }
+      if (!trimmedOtp || trimmedOtp.length < 4) {
+        toast.error("کد تایید را وارد کنید");
+        return;
+      }
 
-    try {
-      setLoading(true);
+      if (timeLeft <= 0) {
+        toast.error("کد منقضی شده است، دوباره ارسال کنید");
+        return;
+      }
 
-      const res = await signIn("credentials", {
-        redirect: false,
-        phone: trimmedPhone,
-        // ⬅️ مهم: اینجا باید otp باشد، نه code
-        otp: trimmedOtp,
+      try {
+        setLoading(true);
+
+        const res = await signIn("credentials", {
+          redirect: false,
+          phone: trimmedPhone,
+          otp: trimmedOtp, // 👈 هماهنگ با authOptions
+        });
+
+        console.log("SIGNIN_RESULT", res);
+
+        if (res?.ok) {
+          toast.success("ورود با موفقیت انجام شد");
+
+          // 🟢 ۱) بستن مودال
+          closeModal();
+
+          // 🟢 ۲) رفرش صفحه فعلی (همان آگهی / همان مسیر)
+          router.refresh();
+        } else {
+          toast.error(
+            res?.error || "کد تایید نادرست است یا منقضی شده است"
+          );
+        }
+      } catch (error) {
+        console.error("VERIFY_OTP_ERROR", error);
+        toast.error("خطا در ارتباط با سرور");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [otp, phone, timeLeft, loading, closeModal, router]
+  );
+
+  // ✅ WebOTP API – پر شدن خودکار کد از SMS (مثل اپ بانکی، روی Chrome/Android)
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (step !== "verify") return;
+
+    // feature detection بر اساس وجود OTPCredential در window
+    if (!("OTPCredential" in window)) return;
+
+    const ac = new AbortController();
+
+    const nav = navigator as unknown as NavigatorWithOTPCredential;
+
+    nav.credentials
+      ?.get({
+        otp: { transport: ["sms"] },
+        signal: ac.signal,
+      })
+      .then((otpCredential) => {
+        if (!otpCredential || !otpCredential.code) return;
+        setOtp(otpCredential.code); // مثلاً "9607"
+      })
+      .catch((err) => {
+        console.log("WEB_OTP_ERROR", err);
       });
 
-      console.log("SIGNIN_RESULT", res);
+    return () => {
+      ac.abort();
+    };
+  }, [step]);
 
-      if (res?.ok) {
-        toast.success("ورود با موفقیت انجام شد");
-
-        // 🟢 ۱) بستن مودال
-        closeModal();
-
-        // 🟢 ۲) رفرش صفحه فعلی (همان آگهی / همان مسیر)
-        router.refresh();
-      } else {
-        toast.error(
-          res?.error || "کد تایید نادرست است یا منقضی شده است"
-        );
-      }
-    } catch (error) {
-      console.error("VERIFY_OTP_ERROR", error);
-      toast.error("خطا در ارتباط با سرور");
-    } finally {
-      setLoading(false);
+  // ✅ اتوماتیک submit شدن وقتی کد کامل شد (چه دستی چه اتومات)
+  useEffect(() => {
+    if (step !== "verify") return;
+    const trimmed = otp.trim();
+    if (trimmed.length === 4 && timeLeft > 0 && !loading) {
+      void handleVerify(); // بدون نیاز به کلیک روی دکمه
     }
-  };
+  }, [otp, step, timeLeft, loading, handleVerify]);
 
   // ارسال مجدد کد - فقط وقتی تایمر تمام شده باشد
   const handleResend = async () => {
@@ -150,6 +211,8 @@ const LoginWithOtpForm: React.FC = () => {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             disabled={loading}
+            autoComplete="tel"
+            inputMode="tel"
           />
           <Button type="submit" disabled={loading}>
             {loading ? "در حال ارسال..." : "ارسال کد تایید"}
@@ -161,12 +224,16 @@ const LoginWithOtpForm: React.FC = () => {
         <>
           <label className="text-sm font-medium">کد تایید</label>
           <Input
-            type="text"
+            type="tel"
             dir="ltr"
             placeholder="کد 4 رقمی"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
             disabled={loading}
+            autoComplete="one-time-code"
+            inputMode="numeric"
+            pattern="\d*"
+            maxLength={4}
           />
 
           <div className="text-xs text-gray-500 text-center">
