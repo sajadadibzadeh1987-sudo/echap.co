@@ -33,10 +33,10 @@ model User {
   printShopProfile PrintShopProfile?
 
   // صندوق پیام / چت
-  chatMessages     ChatMessage[]
+  chatMessages ChatMessage[]
 
   // (در صورت نیاز در آینده) نوتیفیکشن‌ها
-  notifications    Notification[]
+  notifications Notification[]
 }
 
 model JobAd {
@@ -47,7 +47,14 @@ model JobAd {
   phone       String
   createdAt   DateTime @default(now())
   isFeatured  Boolean  @default(false)
-  images      String[]
+
+  /// مسیر عکس‌های اصلی (برای سازگاری با کدهای قدیمی)
+  images String[]
+
+  /// ✅ ساختار جدید برای مدیریت نسخه‌های مختلف تصویر
+  /// هر آیتم می‌تواند شبیه این باشد:
+  /// { "full": "/uploads/abc.jpg", "thumb": "/uploads/thumbs/abc.jpg" }
+  imagesJson Json[] @default([])
 
   status JobAdStatus @default(PENDING)
 
@@ -61,13 +68,13 @@ model JobAd {
   moderatedAt    DateTime?
   moderationNote String?
 
-  isDeleted    Boolean  @default(false)
+  isDeleted    Boolean   @default(false)
   deletedById  String?
   deletedAt    DateTime?
   deleteReason String?
 
   // چت‌های مرتبط با این آگهی (پیام‌های روبات درباره‌ی این آگهی)
-  chatMessages  ChatMessage[]
+  chatMessages ChatMessage[]
 
   // نوتیفیکشن‌ها (اگر خواستیم)
   notifications Notification[]
@@ -139,25 +146,24 @@ enum UserRole {
 
 // نوع فرستنده‌ی پیام در چت
 enum ChatSender {
-  USER    // خود کاربر
-  SYSTEM  // روبات ایچاپ
-  ADMIN   // مدیر / پشتیبانی
+  USER // خود کاربر
+  SYSTEM // روبات ایچاپ
+  ADMIN // مدیر / پشتیبانی
 }
 
 // 📥 مدل چت / صندوق پیام
 model ChatMessage {
-  id        String      @id @default(cuid())
+  id        String     @id @default(cuid())
   userId    String
-  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   sender    ChatSender
   text      String
   jobAdId   String?
-  jobAd     JobAd?      @relation(fields: [jobAdId], references: [id], onDelete: SetNull)
-  isRead    Boolean     @default(false)
-  createdAt DateTime    @default(now())
+  jobAd     JobAd?     @relation(fields: [jobAdId], references: [id], onDelete: SetNull)
+  isRead    Boolean    @default(false)
+  createdAt DateTime   @default(now())
   readAt    DateTime?
 }
-
 
 // (اختیاری – اگر نخواستی بعداً می‌تونیم حذف کنیم)
 enum NotificationType {
@@ -169,20 +175,20 @@ enum NotificationType {
 }
 
 model Notification {
-  id        String           @id @default(cuid())
-  userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(cuid())
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  type      NotificationType
-  title     String
-  message   String
+  type    NotificationType
+  title   String
+  message String
 
-  jobAdId   String?
-  jobAd     JobAd?           @relation(fields: [jobAdId], references: [id], onDelete: Cascade)
+  jobAdId String?
+  jobAd   JobAd?  @relation(fields: [jobAdId], references: [id], onDelete: Cascade)
 
-  sender    String           @default("ایچاپ")
+  sender String @default("ایچاپ")
 
-  isRead    Boolean          @default(false)
-  createdAt DateTime         @default(now())
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
   readAt    DateTime?
 }

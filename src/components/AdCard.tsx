@@ -25,7 +25,7 @@ interface AdCardProps {
   onDelete?: (id: string) => void;
 }
 
-// 🧠 از آدرس نرمال‌شده، آدرس نمایشی تصویر را می‌سازیم
+// 🧠 از آدرس نرمال‌شده، آدرس نمایشی thumbnail را می‌سازیم
 function buildThumbSrc(raw: string): string {
   if (!raw || raw === "/placeholder.png") return "/placeholder.png";
 
@@ -41,7 +41,12 @@ function buildThumbSrc(raw: string): string {
     return publicSrc;
   }
 
-  // فعلاً همان تصویر اصلی
+  // اگر مسیر محلی /uploads/ است، نسخه thumbnail را استفاده کن
+  if (publicSrc.startsWith("/uploads/")) {
+    return publicSrc.replace("/uploads/", "/uploads/thumbs/");
+  }
+
+  // بقیه حالت‌ها همان آدرس نهایی
   return publicSrc;
 }
 
