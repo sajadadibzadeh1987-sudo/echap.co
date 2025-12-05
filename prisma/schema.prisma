@@ -8,83 +8,63 @@ datasource db {
 }
 
 model User {
-  id              String    @id @default(cuid())
-  phone           String    @unique
-  password        String?
-  role            UserRole  @default(USER)
-  hasSelectedRole Boolean   @default(false)
-  firstName       String?
-  lastName        String?
-  email           String?   @unique
-  slug            String?   @unique
-  image           String?
-  bio             String?
-  otp             String?
-  otpExpiry       DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-
-  // ⭐ سیستم سکه‌ها
-  coins       Int       @default(0)
-  lastCheckIn DateTime?
-
-  jobAds           JobAd[]
+  id               String            @id @default(cuid())
+  email            String?           @unique
+  password         String?
+  createdAt        DateTime          @default(now())
+  bio              String?
+  phone            String            @unique
+  updatedAt        DateTime          @updatedAt
+  otp              String?
+  otpExpiry        DateTime?
+  firstName        String?
+  image            String?
+  lastName         String?
+  hasSelectedRole  Boolean           @default(false)
+  slug             String?           @unique
+  coins            Int               @default(0)
+  lastCheckIn      DateTime?
+  role             UserRole          @default(USER)
   businessProfile  BusinessProfile?
+  chatMessages     ChatMessage[]
+  jobAds           JobAd[]
+  notifications    Notification[]
   printShopProfile PrintShopProfile?
-
-  // صندوق پیام / چت
-  chatMessages ChatMessage[]
-
-  // (در صورت نیاز در آینده) نوتیفیکشن‌ها
-  notifications Notification[]
 }
 
 model JobAd {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  category    String
-  phone       String
-  createdAt   DateTime @default(now())
-  isFeatured  Boolean  @default(false)
-
+  id             String         @id @default(cuid())
+  title          String
+  description    String
+  category       String
+  createdAt      DateTime       @default(now())
+  userId         String?
+  phone          String
   /// مسیر عکس‌های اصلی (برای سازگاری با کدهای قدیمی)
-  images String[]
-
+  images         String[]
+  isFeatured     Boolean        @default(false)
+  status         JobAdStatus    @default(PENDING)
+  categorySlug   String?
+  group          String?
+  deleteReason   String?
+  deletedAt      DateTime?
+  deletedById    String?
+  isDeleted      Boolean        @default(false)
+  moderatedAt    DateTime?
+  moderatedById  String?
+  moderationNote String?
   /// ✅ ساختار جدید برای مدیریت نسخه‌های مختلف تصویر
   /// هر آیتم می‌تواند شبیه این باشد:
   /// { "full": "/uploads/abc.jpg", "thumb": "/uploads/thumbs/abc.jpg" }
-  imagesJson Json[] @default([])
-
-  status JobAdStatus @default(PENDING)
-
-  group        String?
-  categorySlug String?
-
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id])
-
-  moderatedById  String?
-  moderatedAt    DateTime?
-  moderationNote String?
-
-  isDeleted    Boolean   @default(false)
-  deletedById  String?
-  deletedAt    DateTime?
-  deleteReason String?
-
-  // چت‌های مرتبط با این آگهی (پیام‌های روبات درباره‌ی این آگهی)
-  chatMessages ChatMessage[]
-
-  // نوتیفیکشن‌ها (اگر خواستیم)
-  notifications Notification[]
+  imagesJson     Json[]         @default([])
+  chatMessages   ChatMessage[]
+  user           User?          @relation(fields: [userId], references: [id])
+  notifications  Notification[]
 }
 
 model BusinessProfile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
-
+  id            String   @id @default(cuid())
+  userId        String   @unique
   slug          String   @unique
   displayName   String
   description   String?
@@ -93,34 +73,34 @@ model BusinessProfile {
   address       String?
   locationLat   Float?
   locationLng   Float?
-  logoUrl       String?
   galleryImages String[]
   openingHours  String?
   website       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  logoUrl       String?
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model PrintShopProfile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id])
-
+  id            String   @id @default(cuid())
+  userId        String   @unique
   name          String
   slug          String   @unique
-  description   String?
-  phone         String?
-  address       String?
-  locationLat   Float?
-  locationLng   Float?
   logoUrl       String?
+  address       String?
+  phone         String?
+  website       String?
   galleryImages String[]
   clients       String[]
   capabilities  String[] @default([])
-  openingHours  String?
-  website       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  description   String?
+  locationLat   Float?
+  locationLng   Float?
+  openingHours  String?
+  user          User     @relation(fields: [userId], references: [id])
 }
 
 model OTP {
@@ -128,6 +108,34 @@ model OTP {
   phone     String   @unique
   code      String
   createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+  id        String     @id @default(cuid())
+  userId    String
+  sender    ChatSender
+  text      String
+  jobAdId   String?
+  isRead    Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  readAt    DateTime?
+  jobAd     JobAd?     @relation(fields: [jobAdId], references: [id])
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  title     String
+  message   String
+  jobAdId   String?
+  sender    String           @default("ایچاپ")
+  isRead    Boolean          @default(false)
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+  jobAd     JobAd?           @relation(fields: [jobAdId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum JobAdStatus {
@@ -144,51 +152,16 @@ enum UserRole {
   SUPER_ADMIN
 }
 
-// نوع فرستنده‌ی پیام در چت
 enum ChatSender {
-  USER // خود کاربر
-  SYSTEM // روبات ایچاپ
-  ADMIN // مدیر / پشتیبانی
+  USER
+  SYSTEM
+  ADMIN
 }
 
-// 📥 مدل چت / صندوق پیام
-model ChatMessage {
-  id        String     @id @default(cuid())
-  userId    String
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sender    ChatSender
-  text      String
-  jobAdId   String?
-  jobAd     JobAd?     @relation(fields: [jobAdId], references: [id], onDelete: SetNull)
-  isRead    Boolean    @default(false)
-  createdAt DateTime   @default(now())
-  readAt    DateTime?
-}
-
-// (اختیاری – اگر نخواستی بعداً می‌تونیم حذف کنیم)
 enum NotificationType {
   AD_CREATED
   AD_PENDING
   AD_APPROVED
   AD_REJECTED
   AD_DELETED
-}
-
-model Notification {
-  id     String @id @default(cuid())
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  type    NotificationType
-  title   String
-  message String
-
-  jobAdId String?
-  jobAd   JobAd?  @relation(fields: [jobAdId], references: [id], onDelete: Cascade)
-
-  sender String @default("ایچاپ")
-
-  isRead    Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  readAt    DateTime?
 }

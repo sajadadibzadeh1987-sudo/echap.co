@@ -19,45 +19,90 @@ function normalizeRequestPhone(raw: unknown): string {
   return phone;
 }
 
+const isDev = process.env.NODE_ENV !== "production";
+const OTP_TTL_SECONDS = 120; // ۲ دقیقه
+const OTP_COOLDOWN_MS = OTP_TTL_SECONDS * 1000;
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const phone = normalizeRequestPhone(body.phone);
 
-    // ساخت کد ۴ رقمی
-    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
-
-    // صرفاً برای دیباگ
-    console.log("📲 کد تایید برای", phone + ":", otpCode);
-
-    // ۱) ذخیره / آپدیت OTP در دیتابیس
-    await prisma.oTP.upsert({
+    // ۰) بررسی cooldown: اگر کد قبلی هنوز اعتبار دارد، اجازه ارسال جدید نده
+    const existing = await prisma.oTP.findUnique({
       where: { phone },
-      update: { code: otpCode, createdAt: new Date() },
-      create: { phone, code: otpCode, createdAt: new Date() },
     });
 
-    // ۲) تلاش برای ارسال SMS
-    console.log(">>> BEFORE_SEND_OTP", phone, otpCode);
+    if (existing) {
+      const diff = Date.now() - existing.createdAt.getTime();
+      if (diff < OTP_COOLDOWN_MS) {
+        const remainingSeconds = Math.max(
+          1,
+          Math.ceil((OTP_COOLDOWN_MS - diff) / 1000)
+        );
 
-    try {
-      await sendOtp(phone, otpCode);
-      console.log(">>> AFTER_SEND_OTP", phone, otpCode);
-    } catch (smsError) {
-      console.error("❌ EDGE_SMS_ERROR", smsError);
+        console.log(
+          "⏱ OTP cooldown for",
+          phone,
+          "remaining:",
+          remainingSeconds,
+          "sec"
+        );
 
-      // پیام محترمانه برای کاربر وقتی سرویس SMS قطع است
-      return NextResponse.json(
-        {
-          success: false,
-          message:
-            "سامانه پیامکی موقتاً در دسترس نیست. لطفاً چند دقیقه دیگر دوباره تلاش کنید.",
-        },
-        { status: 503 }
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "کد قبلی هنوز معتبر است. لطفاً تا پایان زمان باقیمانده منتظر بمانید.",
+            remaining: remainingSeconds,
+          },
+          { status: 429 }
+        );
+      }
+    }
+
+    // ۱) ساخت کد ۴ رقمی
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+
+    console.log("📲 OTP for", phone, "=>", otpCode);
+
+    // ۲) ذخیره / آپدیت OTP در دیتابیس
+    const now = new Date();
+    await prisma.oTP.upsert({
+      where: { phone },
+      update: { code: otpCode, createdAt: now },
+      create: { phone, code: otpCode, createdAt: now },
+    });
+
+    // ۳) ارسال SMS فقط در حالت پروداکشن
+    if (!isDev) {
+      console.log(">>> SENDING_REAL_OTP_SMS");
+      try {
+        await sendOtp(phone, otpCode);
+        console.log(">>> REAL_OTP_SMS_SENT");
+      } catch (smsError) {
+        console.error("❌ EDGE_SMS_ERROR", smsError);
+
+        return NextResponse.json(
+          {
+            success: false,
+            message:
+              "سامانه پیامکی موقتاً در دسترس نیست. لطفاً چند دقیقه دیگر دوباره تلاش کنید.",
+          },
+          { status: 503 }
+        );
+      }
+    } else {
+      console.log(
+        "💡 DEV MODE: SMS واقعی ارسال نشد. از همین لاگ کد را بردار و تست کن."
       );
     }
 
-    return NextResponse.json({ success: true });
+    // expiresIn برای هماهنگی فرانت
+    return NextResponse.json({
+      success: true,
+      expiresIn: OTP_TTL_SECONDS,
+    });
   } catch (err: unknown) {
     console.error("SEND_OTP_ROUTE_ERROR", err);
 
@@ -66,6 +111,7 @@ export async function POST(req: Request) {
         ? err.message
         : "خطا در ارسال کد تایید. لطفاً بعداً دوباره تلاش کنید.";
 
+    // 400 چون معمولاً خطای ورودی / فرمت شماره است
     return NextResponse.json(
       { success: false, message },
       { status: 400 }
