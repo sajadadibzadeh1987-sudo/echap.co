@@ -8,8 +8,12 @@
 │   │   │   ├── ads/
 │   │   │   │   ├── route.ts
 │   │   │   │   ├── [id]/
+│   │   │   │   │   ├── images/
+│   │   │   │   │   │   ├── [index]/
+│   │   │   │   │   │   │   ├── route.ts
 │   │   │   │   │   ├── moderate/
 │   │   │   │   │   │   ├── route.ts
+│   │   │   │   │   ├── route.ts
 │   │   ├── ads/
 │   │   │   ├── route.ts
 │   │   │   ├── [id]/
@@ -20,6 +24,8 @@
 │   │   │   ├── [...nextauth]/
 │   │   │   │   ├── route.ts
 │   │   ├── business-profile/
+│   │   │   ├── route.ts
+│   │   ├── chat/
 │   │   │   ├── route.ts
 │   │   ├── coins/
 │   │   │   ├── check-in/
@@ -56,6 +62,8 @@
 │   │   │   ├── ads/
 │   │   │   │   ├── page.tsx
 │   │   ├── business-profile/
+│   │   │   ├── page.tsx
+│   │   ├── chat/
 │   │   │   ├── page.tsx
 │   │   ├── ClientDashboardPage.tsx
 │   │   ├── jobads/
@@ -141,13 +149,16 @@
 │   │   ├── SessionWrapper.tsx
 │   ├── SiteFooter.tsx
 │   ├── ui/
+│   │   ├── badge.tsx
 │   │   ├── button.tsx
 │   │   ├── card.tsx
 │   │   ├── dialog.tsx
 │   │   ├── input.tsx
 │   │   ├── label.tsx
 │   │   ├── radio-group.tsx
+│   │   ├── select.tsx
 │   │   ├── StoreCard.tsx
+│   │   ├── table.tsx
 │   │   ├── textarea.tsx
 ├── config/
 │   ├── adCategories.ts

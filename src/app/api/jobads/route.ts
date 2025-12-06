@@ -17,6 +17,16 @@ const ALLOWED_TYPES = [
   "image/avif",
 ];
 
+// باید با enum EmploymentType در schema برابر باشه
+const EMPLOYMENT_TYPES = [
+  "FULL_TIME",
+  "PART_TIME",
+  "PROJECT",
+  "REMOTE",
+] as const;
+
+type EmploymentTypeValue = (typeof EMPLOYMENT_TYPES)[number];
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -36,6 +46,13 @@ export async function POST(req: NextRequest) {
     const group = formData.get("group") as string | null;
     const categorySlug = formData.get("categorySlug") as string | null;
 
+    // 🔹 فیلدهای مخصوص استخدام / آماده‌به‌کار
+    const employmentTypeRaw = formData.get("employmentType") as string | null;
+    const salary = formData.get("salary") as string | null;
+    const salaryNegotiableRaw = formData.get(
+      "salaryNegotiable"
+    ) as string | null;
+
     if (!title || !description || !category || !phone) {
       return NextResponse.json(
         { error: "اطلاعات فرم ناقص است" },
@@ -49,6 +66,38 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const groupUpper = group ? group.toUpperCase() : "";
+    const isEmploymentLike =
+      groupUpper === "EMPLOYMENT" || groupUpper === "READY_TO_WORK";
+
+    const isSalaryNegotiable = salaryNegotiableRaw === "true";
+
+    let employmentType: EmploymentTypeValue | null = null;
+
+    if (isEmploymentLike) {
+      if (!employmentTypeRaw || !employmentTypeRaw.trim()) {
+        return NextResponse.json(
+          { error: "برای آگهی‌های استخدام، نوع همکاری را مشخص کنید" },
+          { status: 400 }
+        );
+      }
+
+      const upper = employmentTypeRaw.trim().toUpperCase();
+      if (!EMPLOYMENT_TYPES.includes(upper as EmploymentTypeValue)) {
+        return NextResponse.json(
+          { error: "نوع همکاری معتبر نیست" },
+          { status: 400 }
+        );
+      }
+
+      employmentType = upper as EmploymentTypeValue;
+    }
+
+    const finalSalary =
+      isEmploymentLike && isSalaryNegotiable
+        ? "توافقی"
+        : salary?.trim() || null;
 
     const files = formData
       .getAll("images")
@@ -91,14 +140,15 @@ export async function POST(req: NextRequest) {
           category,
           phone,
           userId: session.user.id,
-          images: [],        // فقط آرایه تصاویر اصلی
+          images: [],
           status: "PENDING",
           group,
           categorySlug,
+          employmentType,
+          salary: finalSalary,
         },
       });
 
-      // پیام روبات (اگر خراب شد، آگهی نخوابه)
       try {
         await prisma.chatMessage.create({
           data: {
@@ -153,7 +203,7 @@ export async function POST(req: NextRequest) {
 
     if (
       mainImageIndex !== null &&
-      !isNaN(mainImageIndex) &&
+      !Number.isNaN(mainImageIndex) &&
       mainImageIndex >= 0 &&
       mainImageIndex < imageUrls.length
     ) {
@@ -172,14 +222,15 @@ export async function POST(req: NextRequest) {
         category,
         phone,
         userId: session.user.id,
-        images: finalImages,   // فقط مسیر full-size در DB
+        images: finalImages,
         status: "PENDING",
         group,
         categorySlug,
+        employmentType,
+        salary: finalSalary,
       },
     });
 
-    // پیام روبات
     try {
       await prisma.chatMessage.create({
         data: {

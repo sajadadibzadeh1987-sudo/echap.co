@@ -15,6 +15,12 @@ import SessionActivityWatcher from "@/components/auth/SessionActivityWatcher";
 // 🟢 مودال ورود با OTP
 import AuthModal from "@/components/auth/AuthModal";
 
+// 🟢 پنل پروفایل (صفحه منِ ایچاپ)
+import ProfilePanel from "@/components/profile/ProfilePanel";
+
+// 🟢 شیت قوانین / پشتیبانی / درباره ایچاپ
+import ProfileInfoSheet from "@/components/profile/ProfileInfoSheet";
+
 // ==========================
 // 🔒 جلوگیری کامل از زوم در موبایل
 // ==========================
@@ -44,7 +50,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           {/* 🔵 مودال ورود با OTP */}
           <AuthModal />
 
-          {/* 🔵 مانیتور تمام فعالیت‌ها */}
+          {/* 🔵 مانیتور تمام فعالیت‌ها (اتمام سشن و …) */}
           <SessionActivityWatcher />
 
           {/* 🔵 هدر داخل Suspense */}
@@ -60,6 +66,12 @@ export default function RootLayout({ children }: { children: ReactNode }) {
 
           {/* 🔵 ناوبری موبایل */}
           <MobileBottomNav />
+
+          {/* 🔵 پنل پروفایل (Bottom Sheet) که روی همه صفحات کار می‌کند */}
+          <ProfilePanel />
+
+          {/* 🔵 شیت قوانین / پشتیبانی / درباره ایچاپ */}
+          <ProfileInfoSheet />
 
           {/* 🔵 Toast */}
           <Toaster position="top-center" />

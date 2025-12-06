@@ -10,12 +10,11 @@ import {
   ChevronDown,
   User,
   Home,
-  LogOut,
   MapPin,
   MessageCircle,
   PlusCircle,
 } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import useModalStore from "@/hooks/use-modal-store";
 
 interface MegaMenuLink {
@@ -215,6 +214,7 @@ export default function SiteHeader() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [mounted]);
 
+  // جستجو در آگهی‌ها (debounce)
   useEffect(() => {
     if (!mounted) return;
 
@@ -244,11 +244,6 @@ export default function SiteHeader() {
 
   const handleAuthClick = () => {
     openModal("auth");
-  };
-
-  const handleLogoutClick = async () => {
-    await signOut({ redirect: false });
-    router.push("/");
   };
 
   const handleCitySelect = (selected: string) => {
@@ -412,7 +407,7 @@ export default function SiteHeader() {
             </ul>
           </nav>
 
-          {/* سمت چپ دسکتاپ: خانه + چت + درج آگهی + جستجو + خروج + پروفایل/ورود */}
+          {/* سمت چپ دسکتاپ: خانه + چت + درج آگهی + جستجو + پروفایل/ورود */}
           <div className="flex items-center gap-3">
             {/* خانه */}
             <button
@@ -455,23 +450,11 @@ export default function SiteHeader() {
               <Search className="w-4 h-4 text-gray-700" />
             </button>
 
-            {/* خروج */}
-            {isAuthenticated && (
-              <button
-                type="button"
-                onClick={handleLogoutClick}
-                className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-100 hover:bg-red-100 transition"
-                aria-label="خروج"
-              >
-                <LogOut className="w-4 h-4 text-gray-700" />
-              </button>
-            )}
-
-            {/* ورود / پروفایل */}
+            {/* ورود / پروفایل (دسکتاپ) */}
             {isAuthenticated ? (
               <button
                 type="button"
-                onClick={() => router.push("/dashboard")}
+                onClick={() => router.push("/dashboard")} // 🔥 دسکتاپ → داشبورد یکپارچه
                 className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-gray-300 hover:border-gray-400 bg-white text-sm text-gray-800 hover:bg-gray-50 transition"
               >
                 <User className="w-4 h-4" />

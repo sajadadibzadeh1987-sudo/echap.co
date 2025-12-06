@@ -1,3 +1,4 @@
+// src/app/dashboard/jobads/create/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -12,12 +13,26 @@ import {
   AD_GROUP_LABELS,
 } from "@/config/adCategories";
 
+// باید با EmploymentType در schema هم‌خوانی داشته باشد
+const EMPLOYMENT_TYPES = [
+  { value: "FULL_TIME", label: "تمام‌وقت" },
+  { value: "PART_TIME", label: "پاره‌وقت" },
+  { value: "PROJECT", label: "پروژه‌ای / قراردادی" },
+  { value: "REMOTE", label: "دورکاری" },
+];
+
 export default function CreateJobAdPage() {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [phone, setPhone] = useState("");
+
+  // 🔹 فقط برای آگهی استخدام / آماده‌به‌کار
+  const [employmentType, setEmploymentType] = useState("");
+  const [salary, setSalary] = useState("");
+  const [isSalaryNegotiable, setIsSalaryNegotiable] = useState(false);
+
   const [images, setImages] = useState<File[]>([]);
   const [mainImageIndex, setMainImageIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,7 +45,9 @@ export default function CreateJobAdPage() {
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
   // پیشنهادهای هوشمند بر اساس تیتر
-  const [smartSuggestions, setSmartSuggestions] = useState<SelectedCategory[]>([]);
+  const [smartSuggestions, setSmartSuggestions] = useState<SelectedCategory[]>(
+    []
+  );
 
   // خطاها
   const [errors, setErrors] = useState<{
@@ -39,7 +56,33 @@ export default function CreateJobAdPage() {
     category?: string;
     phone?: string;
     images?: string;
+    employmentType?: string;
+    salary?: string;
   }>({});
+
+  /* ✅ تشخیص آگهی‌های استخدامی / آماده‌به‌کار
+     - هم group = EMPLOYMENT/READY_TO_WORK
+     - هم group = JOB (نسخه قدیمی)
+     - هم اسلاگ/تیتر شامل کلمات استخدام/همکاری/ready_to_work/employment
+  */
+  const rawGroup = selectedCategory?.group ?? "";
+  const groupStr = String(rawGroup).toUpperCase();
+  const slugLower = (selectedCategory?.slug ?? "").toLowerCase();
+  const titleFa = selectedCategory?.titleFa ?? "";
+
+  const isEmploymentLike =
+    groupStr === "EMPLOYMENT" ||
+    groupStr === "READY_TO_WORK" ||
+    groupStr === "JOB" ||
+    slugLower.startsWith("employment-") ||
+    slugLower.includes("employment") ||
+    titleFa.includes("استخدام") ||
+    titleFa.includes("همکاری") ||
+    titleFa.includes("آماده به کار") ||
+    titleFa.includes("آماده‌به‌کار");
+
+  // برای دیباگ – اگر خواستی می‌تونی بعداً حذفش کنی
+  console.log("✅ selectedCategory:", selectedCategory, "isEmploymentLike:", isEmploymentLike);
 
   // ---- هوشمندی دسته‌بندی بر اساس تیتر آگهی ----
   useEffect(() => {
@@ -87,6 +130,21 @@ export default function CreateJobAdPage() {
     setSmartSuggestions(matches.slice(0, 5)); // حداکثر ۵ پیشنهاد
   }, [title, selectedCategory]);
 
+  // اگر از حالت استخدامی خارج شد، فیلدهای استخدامی را ریست کن
+  useEffect(() => {
+    if (!isEmploymentLike) {
+      setEmploymentType("");
+      setSalary("");
+      setIsSalaryNegotiable(false);
+    }
+
+    setErrors((prev) => ({
+      ...prev,
+      employmentType: undefined,
+      salary: undefined,
+    }));
+  }, [isEmploymentLike]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSubmitting) return;
@@ -102,6 +160,16 @@ export default function CreateJobAdPage() {
     if (images.length === 0)
       newErrors.images = "لطفاً حداقل یک تصویر برای آگهی انتخاب کنید";
 
+    // 🔹 فقط برای آگهی‌های استخدام / آماده‌به‌کار
+    if (isEmploymentLike) {
+      if (!employmentType.trim()) {
+        newErrors.employmentType = "نوع همکاری را انتخاب کنید";
+      }
+      if (!isSalaryNegotiable && !salary.trim()) {
+        newErrors.salary = "میزان حقوق را مشخص کنید یا تیک توافقی را بزنید";
+      }
+    }
+
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
@@ -114,9 +182,27 @@ export default function CreateJobAdPage() {
       formData.append("phone", phone.trim());
 
       if (selectedCategory) {
+        // group نرمال‌شده که به API می‌فرستیم
+        const normalizedGroup = isEmploymentLike
+          ? "EMPLOYMENT"
+          : String(selectedCategory.group);
+
         formData.append("category", selectedCategory.titleFa); // برای نمایش
         formData.append("categorySlug", selectedCategory.slug);
-        formData.append("group", selectedCategory.group);
+        formData.append("group", normalizedGroup);
+      }
+
+      // 🔹 اضافه کردن فیلدهای استخدامی
+      if (isEmploymentLike) {
+        formData.append("employmentType", employmentType.trim());
+        formData.append(
+          "salary",
+          isSalaryNegotiable ? "توافقی" : salary.trim()
+        );
+        formData.append(
+          "salaryNegotiable",
+          isSalaryNegotiable ? "true" : "false"
+        );
       }
 
       images.forEach((img) => formData.append("images", img));
@@ -153,7 +239,9 @@ export default function CreateJobAdPage() {
       router.push("/dashboard/jobads/my");
     } catch (err) {
       console.error("❌ خطای ثبت آگهی:", err);
-      showError("خطای غیرمنتظره در ثبت آگهی. لطفاً بعداً دوباره تلاش کنید.");
+      showError(
+        "خطای غیرمنتظره در ثبت آگهی. لطفاً بعداً دوباره تلاش کنید."
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -228,12 +316,16 @@ export default function CreateJobAdPage() {
                 : "border-slate-300 bg-white hover:bg-slate-50"
             }`}
           >
-            <span className={selectedCategory ? "text-slate-800" : "text-slate-400"}>
+            <span
+              className={selectedCategory ? "text-slate-800" : "text-slate-400"}
+            >
               {selectedCategory
                 ? `${selectedCategory.titleFa} (${AD_GROUP_LABELS[selectedCategory.group]})`
                 : "انتخاب دسته‌بندی آگهی (کلیک کنید)"}
             </span>
-            <span className="text-[10px] text-slate-400">تغییر دسته‌بندی</span>
+            <span className="text-[10px] text-slate-400">
+              تغییر دسته‌بندی
+            </span>
           </button>
 
           {/* پیشنهادهای هوشمند بر اساس تیتر */}
@@ -250,7 +342,10 @@ export default function CreateJobAdPage() {
                     onClick={() => {
                       setSelectedCategory(cat);
                       setSmartSuggestions([]);
-                      setErrors((prev) => ({ ...prev, category: undefined }));
+                      setErrors((prev) => ({
+                        ...prev,
+                        category: undefined,
+                      }));
                     }}
                     className="px-2.5 py-1 rounded-full text-[11px] border border-sky-300 bg-sky-50 text-sky-800 hover:bg-sky-100"
                   >
@@ -281,6 +376,82 @@ export default function CreateJobAdPage() {
             <p className="text-xs text-red-600 mt-1">{errors.phone}</p>
           )}
         </div>
+
+        {/* 🔹 فیلدهای مخصوص استخدام / آماده‌به‌کار */}
+        {isEmploymentLike && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {/* نوع همکاری */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                نوع همکاری
+              </label>
+              <select
+                className={`w-full border rounded-xl px-3 py-2 text-xs md:text-sm ${
+                  errors.employmentType
+                    ? "border-red-500 bg-red-50"
+                    : "border-slate-300 bg-white"
+                }`}
+                value={employmentType}
+                onChange={(e) => setEmploymentType(e.target.value)}
+              >
+                <option value="">انتخاب نوع همکاری</option>
+                {EMPLOYMENT_TYPES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              {errors.employmentType && (
+                <p className="text-xs text-red-600 mt-1">
+                  {errors.employmentType}
+                </p>
+              )}
+            </div>
+
+            {/* میزان حقوق + تیک حقوق توافقی */}
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">
+                میزان حقوق (ماهانه)
+              </label>
+              <input
+                type="text"
+                placeholder="مثلاً ۲۰ تا ۳۰ میلیون تومان"
+                className={`w-full border rounded-xl px-3 py-2 text-xs md:text-sm ${
+                  errors.salary
+                    ? "border-red-500 bg-red-50"
+                    : "border-slate-300 bg-white"
+                } ${isSalaryNegotiable ? "bg-gray-100 text-gray-400" : ""}`}
+                value={salary}
+                onChange={(e) => setSalary(e.target.value)}
+                disabled={isSalaryNegotiable}
+              />
+              <div className="mt-1 flex items-center gap-2">
+                <input
+                  id="salaryNegotiable"
+                  type="checkbox"
+                  className="h-4 w-4"
+                  checked={isSalaryNegotiable}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setIsSalaryNegotiable(checked);
+                    if (checked) {
+                      setErrors((prev) => ({ ...prev, salary: undefined }));
+                    }
+                  }}
+                />
+                <label
+                  htmlFor="salaryNegotiable"
+                  className="text-[11px] text-slate-700"
+                >
+                  حقوق توافقی
+                </label>
+              </div>
+              {errors.salary && (
+                <p className="text-xs text-red-600 mt-1">{errors.salary}</p>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* تصاویر */}
         <div

@@ -3,7 +3,7 @@
 
 import type { ComponentType, SVGProps } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   User2,
@@ -12,24 +12,33 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
+
 import useModalStore from "@/hooks/use-modal-store";
+import { useProfilePanelStore } from "@/store/useProfilePanelStore";
 
 type IconComponent = ComponentType<SVGProps<SVGSVGElement>>;
 
 interface NavItem {
-  key: string;
+  key: "profile" | "create" | "home" | "ads" | "chat";
   labelFa: string;
   href: string;
   icon: IconComponent;
   requireAuth?: boolean;
 }
 
+interface AuthModalStore {
+  openModal: (type: string, data?: unknown) => void;
+}
+
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const { openModal } = useModalStore();
+  const router = useRouter();
 
+  const { data: session } = useSession();
   const isLoggedIn = !!session?.user;
+
+  const { openModal } = useModalStore() as unknown as AuthModalStore;
+  const { open: openProfilePanel } = useProfilePanelStore();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -77,14 +86,23 @@ export default function MobileBottomNav() {
     },
   ];
 
-  const handleProtectedClick = (href: string, requireAuth?: boolean) => {
+  const handleProtectedClick = (item: NavItem) => {
+    const { href, requireAuth, key } = item;
+
+    // اگر نیاز به لاگین دارد و لاگین نیست
     if (requireAuth && !isLoggedIn) {
-      // پاپ‌آپ ورود با موبایل و OTP
       openModal("auth");
       return;
     }
-    // ناوبری عادی
-    window.location.href = href;
+
+    // آیتم پروفایل: اگر لاگین است، پنل پروفایل مثل «دیوار من» باز شود
+    if (key === "profile" && isLoggedIn) {
+      openProfilePanel();
+      return;
+    }
+
+    // سایر آیتم‌ها: ناوبری عادی
+    router.push(href);
   };
 
   return (
@@ -103,15 +121,13 @@ export default function MobileBottomNav() {
             const Icon = item.icon;
             const active = isActive(item.href);
 
-            // نیاز به لاگین دارد
+            // آیتم‌هایی که نیاز به احراز هویت دارند
             if (item.requireAuth) {
               return (
                 <button
                   key={item.key}
                   type="button"
-                  onClick={() =>
-                    handleProtectedClick(item.href, item.requireAuth)
-                  }
+                  onClick={() => handleProtectedClick(item)}
                   className="flex-1 h-full flex items-center justify-center"
                 >
                   <div className="flex flex-col items-center gap-1">
@@ -134,7 +150,7 @@ export default function MobileBottomNav() {
               );
             }
 
-            // بدون نیاز به لاگین
+            // آیتم‌های بدون نیاز به لاگین
             return (
               <Link
                 key={item.key}
